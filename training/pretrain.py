@@ -142,7 +142,7 @@ def main():
     
     if args.config_name:
         config = AutoConfig.from_pretrained(args.config_name)
-    elif config.model_name_or_path:
+    elif args.model_name_or_path:
         config = AutoConfig.from_pretrained(args.model_name_or_path)
     else:
         config = CONFIG_MAPPING[args.model_type]()
