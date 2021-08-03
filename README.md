@@ -2,6 +2,9 @@
 
 * Solution summary:
 
+## Archive Contents
+* To be filled...
+
 ## Hardware
 * RTX 3090 * 2
 
@@ -25,3 +28,6 @@ The main packages used are listed below. Please see the `requirements.txt` for t
 
 ## Inference
 * Use the xxx file to run inference with the trained models.
+
+## License
+* All of our solution code are open-sourced under the Apache 2.0 license.
