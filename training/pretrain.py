@@ -16,9 +16,6 @@ mlm_data = mlm_data.rename(columns={'excerpt':'text'})
 mlm_data.to_csv('mlm_data.csv', index=False)
 
 
-# ### Import Dependencies
-
-
 import argparse
 import logging
 import math

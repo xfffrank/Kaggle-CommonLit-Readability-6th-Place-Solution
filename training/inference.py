@@ -1,3 +1,7 @@
+'''
+This is for testing the CV of a single model.
+'''
+
 from numpy.core.defchararray import mod
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.svm import SVR
