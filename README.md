@@ -23,8 +23,9 @@
 ## Archive Contents
 * `training` folder: code for training transformer models.
 * `inference` folder: training and inference code for the GPR model
-    - `GPR_base.py`: script needed to train the GPR model
-    - `GPR_inference.py`: demonstration of our final submission
+    - `GPR_base.py`: utility script for GPR
+    - `GPR_training.py`: GPR training script
+    - `GPR_inference.py`: inference with GPR for our final submission
 * `external_data` folder: external data for the use of pretraining. The data come from the same url as in `url_legal` of the original `train.csv` and we only used those with CC-BY and CC-BY-SA licenses.
 
 ## Hardware
@@ -49,7 +50,7 @@ The main packages used are listed below. Please see the `requirements.txt` for t
     - e.g. To train a roberta-large model, change `model_path` and `model_name` in  `config.py` to `roberta-large` and run `train.py`. Use the same `model_path` and `model_name` as in the "Model Name" column above if no pretraining is needed.
     - For models with mlm pretraining needed, use the original `train.csv` (combined with the provided external data) and run `pretrain.py` to get the pretrained model first. During finetuning, set `model_path` in `config.py` to the pretrained model path.
 2. Train a GPR model by concatenating all of the out-of-fold embeddings for the 9 models.
-    - The script needed is `GPR_base.py` in the `inference` folder.
+    - The script needed is `GPR_training.py` in the `inference` folder.
     - Suppose the dimension of embeddings is 1024, and the number of samples is 2834 and the number of models is 9, you will get the concatenated embedding of the size (2834, 9*1024) for training the GPR.
 
 ## Inference
