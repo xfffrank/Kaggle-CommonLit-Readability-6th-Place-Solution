@@ -4,7 +4,6 @@ import gc
 import sys
 import math
 import time
-import tqdm
 import random
 import numpy as np
 import pandas as pd
@@ -29,7 +28,7 @@ from torch.utils.data import Dataset, DataLoader
 
 from transformers import (AutoModel, AutoConfig, AutoTokenizer)
 
-from GPR_base import get_pyro_emb_preds
+from GPR_base import train_GPR
 
 train_data = pd.read_csv('../input/commonlitreadabilityprize/train.csv')
 test_data = pd.read_csv('../input/commonlitreadabilityprize/test.csv')
@@ -382,164 +381,177 @@ def run_inference_fx(fold_df, model_name, ckpt_path, batch_size):
     return preds, embeddings
 
 if __name__ == '__main__':
+    
+#     fold1_train_fx = pd.read_csv('../input/folds/fx_folds/fold1_train.csv') # which fold to validate
+#     fold2_train_fx = pd.read_csv('../input/folds/fx_folds/fold2_train.csv') # which fold to validate
+#     fold3_train_fx = pd.read_csv('../input/folds/fx_folds/fold3_train.csv') # which fold to validate
+#     fold4_train_fx = pd.read_csv('../input/folds/fx_folds/fold4_train.csv') # which fold to validate
+#     fold5_train_fx = pd.read_csv('../input/folds/fx_folds/fold5_train.csv') # which fold to validate
+
+    fold1_valid_fx = pd.read_csv('../input/folds/fx_folds/fold1_valid.csv') # which fold to validate
+    fold2_valid_fx = pd.read_csv('../input/folds/fx_folds/fold2_valid.csv') # which fold to validate
+    fold3_valid_fx = pd.read_csv('../input/folds/fx_folds/fold3_valid.csv') # which fold to validate
+    fold4_valid_fx = pd.read_csv('../input/folds/fx_folds/fold4_valid.csv') # which fold to validate
+    fold5_valid_fx = pd.read_csv('../input/folds/fx_folds/fold5_valid.csv') # which fold to validate
+
     ## Load embeddings
     model_path = 'roberta-large'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'roberta-large'
     batch_size = 128
-    preds_1_roberta_l_fx_old, embeddings1_rl_fx_old = run_inference_fx(test, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold0.ckpt', batch_size)
-    preds_2_roberta_l_fx_old, embeddings2_rl_fx_old = run_inference_fx(test, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold1.ckpt', batch_size)
-    preds_3_roberta_l_fx_old, embeddings3_rl_fx_old = run_inference_fx(test, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold2.ckpt', batch_size)
-    preds_4_roberta_l_fx_old, embeddings4_rl_fx_old = run_inference_fx(test, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold3.ckpt', batch_size)
-    preds_5_roberta_l_fx_old, embeddings5_rl_fx_old = run_inference_fx(test, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold4.ckpt', batch_size)
-    preds_roberta_l_fx_old = (preds_1_roberta_l_fx_old + preds_2_roberta_l_fx_old + preds_3_roberta_l_fx_old + preds_4_roberta_l_fx_old + preds_5_roberta_l_fx_old) / 5
-
+    preds_1_roberta_l_fx_old, embeddings1_rl_fx_old = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold0.ckpt', batch_size)
+    preds_2_roberta_l_fx_old, embeddings2_rl_fx_old = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold1.ckpt', batch_size)
+    preds_3_roberta_l_fx_old, embeddings3_rl_fx_old = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold2.ckpt', batch_size)
+    preds_4_roberta_l_fx_old, embeddings4_rl_fx_old = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold3.ckpt', batch_size)
+    preds_5_roberta_l_fx_old, embeddings5_rl_fx_old = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_180/exp_180_*/roberta-large_seed42_fold4.ckpt', batch_size)
 
     model_path = 'microsoft/deberta-large'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'microsoft/deberta-large'
     batch_size = 128
-    preds_1_deberta_l_fx, embeddings1_dl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold0.ckpt', batch_size)
-    preds_2_deberta_l_fx, embeddings2_dl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold1.ckpt', batch_size)
-    preds_3_deberta_l_fx, embeddings3_dl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold2.ckpt', batch_size)
-    preds_4_deberta_l_fx, embeddings4_dl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold3.ckpt', batch_size)
-    preds_5_deberta_l_fx, embeddings5_dl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold4.ckpt', batch_size)
-    preds_deberta_l_fx = (preds_1_deberta_l_fx + preds_2_deberta_l_fx + preds_3_deberta_l_fx + preds_4_deberta_l_fx + preds_5_deberta_l_fx) / 5
+    preds_1_deberta_l_fx, embeddings1_dl_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold0.ckpt', batch_size)
+    preds_2_deberta_l_fx, embeddings2_dl_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold1.ckpt', batch_size)
+    preds_3_deberta_l_fx, embeddings3_dl_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold2.ckpt', batch_size)
+    preds_4_deberta_l_fx, embeddings4_dl_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold3.ckpt', batch_size)
+    preds_5_deberta_l_fx, embeddings5_dl_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_187/exp_187_*/microsoft/deberta-large_seed42_fold4.ckpt', batch_size)
 
     model_path = 'xlnet-large-cased'
-    print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'xlnet-large-cased'
     batch_size = 128
-    preds_1_xlnet_l_fx, embeddings1_xl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold0.ckpt', batch_size)
-    preds_2_xlnet_l_fx, embeddings2_xl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold1.ckpt', batch_size)
-    preds_3_xlnet_l_fx, embeddings3_xl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold2.ckpt', batch_size)
-    preds_4_xlnet_l_fx, embeddings4_xl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold3.ckpt', batch_size)
-    preds_5_xlnet_l_fx, embeddings5_xl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold4.ckpt', batch_size)
-    preds_xlnet_l_fx = (preds_1_xlnet_l_fx + preds_2_xlnet_l_fx + preds_3_xlnet_l_fx + preds_4_xlnet_l_fx + preds_5_xlnet_l_fx) / 5
+    preds_1_xlnet_l_fx, embeddings1_xl_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold0.ckpt', batch_size)
+    preds_2_xlnet_l_fx, embeddings2_xl_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold1.ckpt', batch_size)
+    preds_3_xlnet_l_fx, embeddings3_xl_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold2.ckpt', batch_size)
+    preds_4_xlnet_l_fx, embeddings4_xl_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold3.ckpt', batch_size)
+    preds_5_xlnet_l_fx, embeddings5_xl_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_284_/exp_284/xlnet-large-cased_seed42_fold4.ckpt', batch_size)
+    
 
     # model_path = '../input/robertalarge-epoch5-textaugment'
     model_path = 'roberta-large'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'roberta-large'
     batch_size = 128
-    preds_1_roberta_l_s2_fx, embeddings1_rl_sq2_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold0.ckpt', batch_size)
-    preds_2_roberta_l_s2_fx, embeddings2_rl_sq2_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold1.ckpt', batch_size)
-    preds_3_roberta_l_s2_fx, embeddings3_rl_sq2_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold2.ckpt', batch_size)
-    preds_4_roberta_l_s2_fx, embeddings4_rl_sq2_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold3.ckpt', batch_size)
-    preds_5_roberta_l_s2_fx, embeddings5_rl_sq2_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold4.ckpt', batch_size)
-    preds_roberta_l_s2_fx = (preds_1_roberta_l_s2_fx + preds_2_roberta_l_s2_fx + preds_3_roberta_l_s2_fx + preds_4_roberta_l_s2_fx + preds_5_roberta_l_s2_fx) / 5
+    preds_1_roberta_l_s2_fx, embeddings1_rl_sq2_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold0.ckpt', batch_size)
+    preds_2_roberta_l_s2_fx, embeddings2_rl_sq2_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold1.ckpt', batch_size)
+    preds_3_roberta_l_s2_fx, embeddings3_rl_sq2_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold2.ckpt', batch_size)
+    preds_4_roberta_l_s2_fx, embeddings4_rl_sq2_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold3.ckpt', batch_size)
+    preds_5_roberta_l_s2_fx, embeddings5_rl_sq2_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_312_rl_squad/exp_312_*/roberta-large_seed42_fold4.ckpt', batch_size)
 
     model_path = 'allenai/longformer-large-4096-finetuned-triviaqa'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'allenai/longformer-large-4096-finetuned-triviaqa'
     batch_size = 64
-    preds_1_longformer_l_tqa_fx, embeddings1_longformer_tqa_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold0.ckpt', batch_size)
-    preds_2_longformer_l_tqa_fx, embeddings2_longformer_tqa_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold1.ckpt', batch_size)
-    preds_3_longformer_l_tqa_fx, embeddings3_longformer_tqa_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold2.ckpt', batch_size)
-    preds_4_longformer_l_tqa_fx, embeddings4_longformer_tqa_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold3.ckpt', batch_size)
-    preds_5_longformer_l_tqa_fx, embeddings5_longformer_tqa_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold4.ckpt', batch_size)
-    preds_longformer_ltqa_fx = (preds_1_longformer_l_tqa_fx + preds_2_longformer_l_tqa_fx + preds_3_longformer_l_tqa_fx + preds_4_longformer_l_tqa_fx + preds_5_longformer_l_tqa_fx) / 5
+    preds_1_longformer_l_tqa_fx, embeddings1_longformer_tqa_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold0.ckpt', batch_size)
+    preds_2_longformer_l_tqa_fx, embeddings2_longformer_tqa_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold1.ckpt', batch_size)
+    preds_3_longformer_l_tqa_fx, embeddings3_longformer_tqa_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold2.ckpt', batch_size)
+    preds_4_longformer_l_tqa_fx, embeddings4_longformer_tqa_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold3.ckpt', batch_size)
+    preds_5_longformer_l_tqa_fx, embeddings5_longformer_tqa_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_426_ll_tqa/exp_426_*/allenai/longformer-large-4096-finetuned-triviaqa_seed42_fold4.ckpt', batch_size)
 
+    
     model_path = 'roberta-large'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'roberta-large'
     batch_size = 128
-    preds_1_roberta_l_s2_mlm_only_pl_fx, embeddings1_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold0.ckpt', batch_size)
-    preds_2_roberta_l_s2_mlm_only_pl_fx, embeddings2_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold1.ckpt', batch_size)
-    preds_3_roberta_l_s2_mlm_only_pl_fx, embeddings3_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold2.ckpt', batch_size)
-    preds_4_roberta_l_s2_mlm_only_pl_fx, embeddings4_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold3.ckpt', batch_size)
-    preds_5_roberta_l_s2_mlm_only_pl_fx, embeddings5_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold4.ckpt', batch_size)
-    preds_roberta_l_s2_mlm_only_pl_fx = (preds_1_roberta_l_s2_mlm_only_pl_fx + preds_2_roberta_l_s2_mlm_only_pl_fx + preds_3_roberta_l_s2_mlm_only_pl_fx + preds_4_roberta_l_s2_mlm_only_pl_fx + preds_5_roberta_l_s2_mlm_only_pl_fx) / 5
-
+    preds_1_roberta_l_s2_mlm_only_pl_fx, embeddings1_rl_sq2_mlm_only_pl_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold0.ckpt', batch_size)
+    preds_2_roberta_l_s2_mlm_only_pl_fx, embeddings2_rl_sq2_mlm_only_pl_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold1.ckpt', batch_size)
+    preds_3_roberta_l_s2_mlm_only_pl_fx, embeddings3_rl_sq2_mlm_only_pl_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold2.ckpt', batch_size)
+    preds_4_roberta_l_s2_mlm_only_pl_fx, embeddings4_rl_sq2_mlm_only_pl_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold3.ckpt', batch_size)
+    preds_5_roberta_l_s2_mlm_only_pl_fx, embeddings5_rl_sq2_mlm_only_pl_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_723_rl_sq2_mlm/exp_723_*/roberta-large_seed42_fold4.ckpt', batch_size)   
+    
 
     model_path = 'valhalla/bart-large-finetuned-squadv1'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'valhalla/bart-large-finetuned-squadv1'
     batch_size = 128
-    preds_1_bl_mlm_rmdp_fx, embeddings1_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold0.ckpt', batch_size)
-    preds_2_bl_mlm_rmdp_fx, embeddings2_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold1.ckpt', batch_size)
-    preds_3_bl_mlm_rmdp_fx, embeddings3_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold2.ckpt', batch_size)
-    preds_4_bl_mlm_rmdp_fx, embeddings4_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold3.ckpt', batch_size)
-    preds_5_bl_mlm_rmdp_fx, embeddings5_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold4.ckpt', batch_size)
-    preds_bl_mlm_rmdp_fx = (preds_1_bl_mlm_rmdp_fx + preds_2_bl_mlm_rmdp_fx + preds_3_bl_mlm_rmdp_fx + preds_4_bl_mlm_rmdp_fx + preds_5_bl_mlm_rmdp_fx) / 5
-
+    preds_1_bl_mlm_rmdp_fx, embeddings1_bl_mlm_rmdp_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold0.ckpt', batch_size)
+    preds_2_bl_mlm_rmdp_fx, embeddings2_bl_mlm_rmdp_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold1.ckpt', batch_size)
+    preds_3_bl_mlm_rmdp_fx, embeddings3_bl_mlm_rmdp_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold2.ckpt', batch_size)
+    preds_4_bl_mlm_rmdp_fx, embeddings4_bl_mlm_rmdp_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold3.ckpt', batch_size)
+    preds_5_bl_mlm_rmdp_fx, embeddings5_bl_mlm_rmdp_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_799_bl_sq1_mlm_rm_dp/exp_799_*/valhalla/bart-large-finetuned-squadv1_seed42_fold4.ckpt', batch_size)
 
     model_path = 'microsoft/deberta-large'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'microsoft/deberta-large'
     batch_size = 128
-    preds_1_deberta_l_mlm_rmdp_fx, embeddings1_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold0.ckpt', batch_size)
-    preds_2_deberta_l_mlm_rmdp_fx, embeddings2_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold1.ckpt', batch_size)
-    preds_3_deberta_l_mlm_rmdp_fx, embeddings3_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold2.ckpt', batch_size)
-    preds_4_deberta_l_mlm_rmdp_fx, embeddings4_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold3.ckpt', batch_size)
-    preds_5_deberta_l_mlm_rmdp_fx, embeddings5_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold4.ckpt', batch_size)
-    preds_deberta_l_mlm_rmdp_fx = (preds_1_deberta_l_mlm_rmdp_fx + preds_2_deberta_l_mlm_rmdp_fx + preds_3_deberta_l_mlm_rmdp_fx + preds_4_deberta_l_mlm_rmdp_fx + preds_5_deberta_l_mlm_rmdp_fx) / 5
+    preds_1_deberta_l_mlm_rmdp_fx, embeddings1_dl_mlm_rmdp_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold0.ckpt', batch_size)
+    preds_2_deberta_l_mlm_rmdp_fx, embeddings2_dl_mlm_rmdp_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold1.ckpt', batch_size)
+    preds_3_deberta_l_mlm_rmdp_fx, embeddings3_dl_mlm_rmdp_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold2.ckpt', batch_size)
+    preds_4_deberta_l_mlm_rmdp_fx, embeddings4_dl_mlm_rmdp_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold3.ckpt', batch_size)
+    preds_5_deberta_l_mlm_rmdp_fx, embeddings5_dl_mlm_rmdp_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_804_dl_mnli_mlm_rm_dp/exp_804_*/microsoft/deberta-large-mnli_seed42_fold4.ckpt', batch_size)
 
+    
+    
     model_path = 'ahotrod/electra_large_discriminator_squad2_512'
     print("Loading {} embeddings".format(model_path))
-
     CFG.model_path = model_path
     CFG.model_name = 'ahotrod/electra_large_discriminator_squad2_512'
     batch_size = 128
-    preds_1_el_s2_rmdp_fx, embeddings1_el_s2_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold0.ckpt', batch_size)
-    preds_2_el_s2_rmdp_fx, embeddings2_el_s2_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold1.ckpt', batch_size)
-    preds_3_el_s2_rmdp_fx, embeddings3_el_s2_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold2.ckpt', batch_size)
-    preds_4_el_s2_rmdp_fx, embeddings4_el_s2_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold3.ckpt', batch_size)
-    preds_5_el_s2_rmdp_fx, embeddings5_el_s2_rmdp_fx = run_inference_fx(test, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold4.ckpt', batch_size)
-    preds_el_s2_rmdp_fx = (preds_1_el_s2_rmdp_fx + preds_2_el_s2_rmdp_fx + preds_3_el_s2_rmdp_fx + preds_4_el_s2_rmdp_fx + preds_5_el_s2_rmdp_fx) / 5
+    preds_1_el_s2_rmdp_fx, embeddings1_el_s2_rmdp_fx = run_inference_fx(fold1_valid_fx, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold0.ckpt', batch_size)
+    preds_2_el_s2_rmdp_fx, embeddings2_el_s2_rmdp_fx = run_inference_fx(fold2_valid_fx, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold1.ckpt', batch_size)
+    preds_3_el_s2_rmdp_fx, embeddings3_el_s2_rmdp_fx = run_inference_fx(fold3_valid_fx, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold2.ckpt', batch_size)
+    preds_4_el_s2_rmdp_fx, embeddings4_el_s2_rmdp_fx = run_inference_fx(fold4_valid_fx, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold3.ckpt', batch_size)
+    preds_5_el_s2_rmdp_fx, embeddings5_el_s2_rmdp_fx = run_inference_fx(fold5_valid_fx, model_path, '../input/fx_weights/exp_827_el_sq2_rm_dp/exp_827_*/ahotrod/electra_large_discriminator_squad2_512_seed42_fold4.ckpt', batch_size)
 
+    
+    
+    # Collate all oof embeddings for each transformer models and store them in a list
+    roberta_l_fx_valid = [embeddings1_rl_fx_old, embeddings2_rl_fx_old,
+                          embeddings3_rl_fx_old, embeddings4_rl_fx_old, embeddings5_rl_fx_old]
 
-    embeddings1 = np.concatenate((normalize(embeddings1_longformer_tqa_fx), normalize(embeddings1_bl_mlm_rmdp_fx), normalize(embeddings1_rl_sq2_mlm_only_pl_fx),
-                                  normalize(embeddings1_dl_mlm_rmdp_fx), normalize(embeddings1_xl_fx), normalize(embeddings1_rl_sq2_fx),
-                                  normalize(embeddings1_dl_fx), normalize(embeddings1_el_s2_rmdp_fx), normalize(embeddings1_rl_fx_old),  
-                                  ), axis=1)
+    deberta_l_fx_valid = [embeddings1_dl_fx, embeddings2_dl_fx,
+                          embeddings3_dl_fx, embeddings4_dl_fx, embeddings5_dl_fx]
 
-    embeddings2 = np.concatenate((normalize(embeddings2_longformer_tqa_fx), normalize(embeddings2_bl_mlm_rmdp_fx), normalize(embeddings2_rl_sq2_mlm_only_pl_fx),
-                                  normalize(embeddings2_dl_mlm_rmdp_fx), normalize(embeddings2_xl_fx), normalize(embeddings2_rl_sq2_fx),
-                                  normalize(embeddings2_dl_fx), normalize(embeddings2_el_s2_rmdp_fx), normalize(embeddings2_rl_fx_old),  
-                                  ), axis=1)
+    xlnet_l_fx_valid = [embeddings1_xl_fx, embeddings2_xl_fx,
+                        embeddings3_xl_fx, embeddings4_xl_fx, embeddings5_xl_fx]
+    
+    roberta_l_sq2_fx_valid = [embeddings1_rl_sq2_fx, embeddings2_rl_sq2_fx,
+                             embeddings3_rl_sq2_fx, embeddings4_rl_sq2_fx, embeddings5_rl_sq2_fx]
+    
+    longformer_l_tqa_fx_valid = [embeddings1_longformer_tqa_fx, embeddings2_longformer_tqa_fx,
+                                 embeddings3_longformer_tqa_fx, embeddings4_longformer_tqa_fx, embeddings5_longformer_tqa_fx]
+    
+    roberta_l_sq2_mlm_only_fx_valid = [embeddings1_rl_sq2_mlm_only_pl_fx, embeddings2_rl_sq2_mlm_only_pl_fx
+                                      , embeddings3_rl_sq2_mlm_only_pl_fx, embeddings4_rl_sq2_mlm_only_pl_fx, embeddings5_rl_sq2_mlm_only_pl_fx]
+    
+    bart_l_mlm_rmdp_fx_valid = [embeddings1_bl_mlm_rmdp_fx, embeddings2_bl_mlm_rmdp_fx,
+                                embeddings3_bl_mlm_rmdp_fx, embeddings4_bl_mlm_rmdp_fx, embeddings5_bl_mlm_rmdp_fx]
+        
+    deberta_l_mnli_mlm_rmdp_fx_valid = [embeddings1_dl_mlm_rmdp_fx, embeddings2_dl_mlm_rmdp_fx,
+                                        embeddings3_dl_mlm_rmdp_fx, embeddings4_dl_mlm_rmdp_fx, embeddings5_dl_mlm_rmdp_fx]
+            
+    electra_l_s2_rmdp_fx_valid = [embeddings1_el_s2_rmdp_fx, embeddings2_el_s2_rmdp_fx,
+                                  embeddings3_el_s2_rmdp_fx, embeddings4_el_s2_rmdp_fx, embeddings5_el_s2_rmdp_fx]
+        
+    # Collate all oof target and store them in a list
+    fold_target_valid_fx = [fold1_valid_fx['target'], fold2_valid_fx['target'], fold3_valid_fx['target'], fold4_valid_fx['target'], fold5_valid_fx['target']]
+    
+    # Concatenate all the 9 models oof embeddings
+    embeddings = np.concatenate((
+        normalize(np.vstack(longformer_l_tqa_fx_valid)),
+        normalize(np.vstack(bart_l_mlm_rmdp_fx_valid)),
+        normalize(np.vstack(roberta_l_sq2_mlm_only_fx_valid)),
+        normalize(np.vstack(deberta_l_mnli_mlm_rmdp_fx_valid)),
+        normalize(np.vstack(xlnet_l_fx_valid)),
+        normalize(np.vstack(roberta_l_sq2_fx_valid)),
+        normalize(np.vstack(deberta_l_fx_valid)),
+        normalize(np.vstack(electra_l_s2_rmdp_fx_valid)),
+        normalize(np.vstack(roberta_l_fx_valid))
+    ), axis=1)
+    emb_train = np.vstack(embeddings)
 
-    embeddings3 = np.concatenate((normalize(embeddings3_longformer_tqa_fx), normalize(embeddings3_bl_mlm_rmdp_fx), normalize(embeddings3_rl_sq2_mlm_only_pl_fx),
-                                  normalize(embeddings3_dl_mlm_rmdp_fx), normalize(embeddings3_xl_fx), normalize(embeddings3_rl_sq2_fx),
-                                  normalize(embeddings3_dl_fx), normalize(embeddings3_el_s2_rmdp_fx), normalize(embeddings3_rl_fx_old),  
-                                  ), axis=1)
+    y = np.concatenate(fold_target_valid_fx)    
 
-    embeddings4 = np.concatenate((normalize(embeddings4_longformer_tqa_fx), normalize(embeddings4_bl_mlm_rmdp_fx), normalize(embeddings4_rl_sq2_mlm_only_pl_fx),
-                                  normalize(embeddings4_dl_mlm_rmdp_fx), normalize(embeddings4_xl_fx), normalize(embeddings4_rl_sq2_fx),
-                                  normalize(embeddings4_dl_fx), normalize(embeddings4_el_s2_rmdp_fx), normalize(embeddings4_rl_fx_old),  
-                                  ), axis=1)
-
-    embeddings5 = np.concatenate((normalize(embeddings5_longformer_tqa_fx), normalize(embeddings5_bl_mlm_rmdp_fx), normalize(embeddings5_rl_sq2_mlm_only_pl_fx),
-                                  normalize(embeddings5_dl_mlm_rmdp_fx), normalize(embeddings5_xl_fx), normalize(embeddings5_rl_sq2_fx),
-                                  normalize(embeddings5_dl_fx), normalize(embeddings5_el_s2_rmdp_fx), normalize(embeddings5_rl_fx_old),  
-                                  ), axis=1)
-
-
-    ### Where to load the gpr weights, embedding and target for GPR inference
+    ### Where to save the gpr weights, embedding and target
     gpr_path = '../input/embeddings/fx_embeddings_and_folds/fx_embeddings/gpr_rbf/best_9_gpr_model_test'
     emb_path = '../input/embeddings/fx_embeddings_and_folds/fx_embeddings/gpr_rbf/best_9_embeddings_test.npy'
     y_path = '../input/embeddings/fx_embeddings_and_folds/fx_embeddings/gpr_rbf/best_9_y_test.npy'
-
-    embeddings = [embeddings1, embeddings2, embeddings3, embeddings4, embeddings5]
-
-    print("Starting GPR inference")
-    gpr_preds_concat = [get_pyro_emb_preds(emb_path, y_path, gpr_path, x) for x in embeddings]
-
-    preds_combine = np.mean(gpr_preds_concat, axis=0)
-    print(preds_combine)
+    
+    print("Training GPR model on OOF embeddings..")
+    mean_pred = train_GPR(emb_train, y, gpr_path, emb_path, y_path)

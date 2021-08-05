@@ -1,8 +1,8 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-import torch
 from tqdm import tqdm
+import torch
 
 import pyro
 import pyro.contrib.gp as gp
@@ -15,11 +15,15 @@ smoke_test = ('CI' in os.environ)  # ignore; used to check code integrity in the
 
 device = torch.device('cuda:0')
 
-def train_GPR(embeddings, target):
+def train_GPR(embeddings, target, gpr_path, emb_path, y_path):
     """
     GPR training: The GPR model takes in the embeddings and the label/target of the samples
         embeddings: numpy array of shape(N, D)
         target: numpy array of shape (N, )
+        
+        gpr_path: the location to save the gpr model
+        emb_path: the location to save the transformer oof embedding
+        y_path: the location to save the original label/target
     """
     pyro.set_rng_seed(0)
     pyro.clear_param_store()
@@ -33,7 +37,7 @@ def train_GPR(embeddings, target):
     kernel = gp.kernels.RBF(input_dim=X.shape[1], variance=torch.tensor(var),
                         lengthscale=torch.tensor(ls)).to(device)
 
-    gpr = gp.models.GPRegression(X, target, kernel, noise=torch.tensor(noise)).to(device)
+    gpr = gp.models.GPRegression(X, y, kernel, noise=torch.tensor(noise)).to(device)
 
     optimizer = torch.optim.Adam(gpr.parameters(), lr=0.005)
     loss_fn = pyro.infer.Trace_ELBO().differentiable_loss
@@ -50,7 +54,11 @@ def train_GPR(embeddings, target):
         mean, cov = gpr(X, full_cov=True, noiseless=False)
     
     gpr_prediction = mean.cpu().numpy()
-    plt.plot(losses)
+#     plt.plot(losses)
+    
+    print("Saving gpr model, embeddings, and target")
+    save_gpr_model(gpr, embeddings, y, gpr_path, emb_path, y_path)
+    
     return gpr_prediction
 
 def save_gpr_model(gpr, embedding, y, gpr_path, embedding_path, y_path):
@@ -68,6 +76,9 @@ def save_gpr_model(gpr, embedding, y, gpr_path, embedding_path, y_path):
     torch.save(gpr.state_dict(), gpr_path)
     np.save(embedding_path, embedding)
     np.save(y_path, y.cpu())
+    print("Finished saving gpr weights at: {}".format(gpr_path))
+    print("Finished saving embeddings at: {}".format(embedding_path))
+    print("Finished saving embeddings label/target at: {}".format(y_path))
     
 
 def get_pyro_emb_preds(embedding_path, y_path, gpr_model_path, test_embedding):
