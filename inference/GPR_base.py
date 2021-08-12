@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 import torch
 
@@ -54,7 +53,6 @@ def train_GPR(embeddings, target, gpr_path, emb_path, y_path):
         mean, cov = gpr(X, full_cov=True, noiseless=False)
     
     gpr_prediction = mean.cpu().numpy()
-#     plt.plot(losses)
     
     print("Saving gpr model, embeddings, and target")
     save_gpr_model(gpr, embeddings, y, gpr_path, emb_path, y_path)
