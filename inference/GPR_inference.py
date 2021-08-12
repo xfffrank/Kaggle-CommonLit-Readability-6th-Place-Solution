@@ -28,10 +28,10 @@ from torch.utils.data import Dataset, DataLoader
 from transformers import (AutoModel, AutoConfig, AutoTokenizer)
 
 from GPR_base import get_pyro_emb_preds
-from model_path import ModelPath
+from gpr_config import GPR_CFG
 
-train_data = pd.read_csv('../../commonlitreadabilityprize/train.csv')
-test_data = pd.read_csv('../../commonlitreadabilityprize/test.csv')
+train_data = pd.read_csv(GPR_CFG.train_csv)
+test_data = pd.read_csv(GPR_CFG.test_csv)
 
 target = train_data['target'].to_numpy()
 
@@ -39,7 +39,7 @@ def rmse_score(y_true,y_pred):
     return np.sqrt(mean_squared_error(y_true,y_pred))
 
 device = torch.device("cuda")
-COMPUTE_CV = False
+COMPUTE_CV = GPR_CFG.COMPUTE_CV
 
 if COMPUTE_CV:
     test = train_data
@@ -387,11 +387,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'roberta-large'
     batch_size = 128
-    preds_1_roberta_l_fx_old, embeddings1_rl_fx_old = run_inference_fx(test, model_path, ModelPath.roberta_large_model[0], batch_size)
-    preds_2_roberta_l_fx_old, embeddings2_rl_fx_old = run_inference_fx(test, model_path, ModelPath.roberta_large_model[1], batch_size)
-    preds_3_roberta_l_fx_old, embeddings3_rl_fx_old = run_inference_fx(test, model_path, ModelPath.roberta_large_model[2], batch_size)
-    preds_4_roberta_l_fx_old, embeddings4_rl_fx_old = run_inference_fx(test, model_path, ModelPath.roberta_large_model[3], batch_size)
-    preds_5_roberta_l_fx_old, embeddings5_rl_fx_old = run_inference_fx(test, model_path, ModelPath.roberta_large_model[4], batch_size)
+    preds_1_roberta_l_fx_old, embeddings1_rl_fx_old = run_inference_fx(test, model_path, GPR_CFG.roberta_large_model[0], batch_size)
+    preds_2_roberta_l_fx_old, embeddings2_rl_fx_old = run_inference_fx(test, model_path, GPR_CFG.roberta_large_model[1], batch_size)
+    preds_3_roberta_l_fx_old, embeddings3_rl_fx_old = run_inference_fx(test, model_path, GPR_CFG.roberta_large_model[2], batch_size)
+    preds_4_roberta_l_fx_old, embeddings4_rl_fx_old = run_inference_fx(test, model_path, GPR_CFG.roberta_large_model[3], batch_size)
+    preds_5_roberta_l_fx_old, embeddings5_rl_fx_old = run_inference_fx(test, model_path, GPR_CFG.roberta_large_model[4], batch_size)
     preds_roberta_l_fx_old = (preds_1_roberta_l_fx_old + preds_2_roberta_l_fx_old + preds_3_roberta_l_fx_old + preds_4_roberta_l_fx_old + preds_5_roberta_l_fx_old) / 5
 
 
@@ -401,11 +401,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'microsoft/deberta-large'
     batch_size = 128
-    preds_1_deberta_l_fx, embeddings1_dl_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_model[0], batch_size)
-    preds_2_deberta_l_fx, embeddings2_dl_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_model[1], batch_size)
-    preds_3_deberta_l_fx, embeddings3_dl_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_model[2], batch_size)
-    preds_4_deberta_l_fx, embeddings4_dl_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_model[3], batch_size)
-    preds_5_deberta_l_fx, embeddings5_dl_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_model[4], batch_size)
+    preds_1_deberta_l_fx, embeddings1_dl_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_model[0], batch_size)
+    preds_2_deberta_l_fx, embeddings2_dl_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_model[1], batch_size)
+    preds_3_deberta_l_fx, embeddings3_dl_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_model[2], batch_size)
+    preds_4_deberta_l_fx, embeddings4_dl_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_model[3], batch_size)
+    preds_5_deberta_l_fx, embeddings5_dl_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_model[4], batch_size)
     preds_deberta_l_fx = (preds_1_deberta_l_fx + preds_2_deberta_l_fx + preds_3_deberta_l_fx + preds_4_deberta_l_fx + preds_5_deberta_l_fx) / 5
 
     model_path = 'xlnet-large-cased'
@@ -414,11 +414,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'xlnet-large-cased'
     batch_size = 128
-    preds_1_xlnet_l_fx, embeddings1_xl_fx = run_inference_fx(test, model_path, ModelPath.xlnet_large_model[0], batch_size)
-    preds_2_xlnet_l_fx, embeddings2_xl_fx = run_inference_fx(test, model_path, ModelPath.xlnet_large_model[1], batch_size)
-    preds_3_xlnet_l_fx, embeddings3_xl_fx = run_inference_fx(test, model_path, ModelPath.xlnet_large_model[2], batch_size)
-    preds_4_xlnet_l_fx, embeddings4_xl_fx = run_inference_fx(test, model_path, ModelPath.xlnet_large_model[3], batch_size)
-    preds_5_xlnet_l_fx, embeddings5_xl_fx = run_inference_fx(test, model_path, ModelPath.xlnet_large_model[4], batch_size)
+    preds_1_xlnet_l_fx, embeddings1_xl_fx = run_inference_fx(test, model_path, GPR_CFG.xlnet_large_model[0], batch_size)
+    preds_2_xlnet_l_fx, embeddings2_xl_fx = run_inference_fx(test, model_path, GPR_CFG.xlnet_large_model[1], batch_size)
+    preds_3_xlnet_l_fx, embeddings3_xl_fx = run_inference_fx(test, model_path, GPR_CFG.xlnet_large_model[2], batch_size)
+    preds_4_xlnet_l_fx, embeddings4_xl_fx = run_inference_fx(test, model_path, GPR_CFG.xlnet_large_model[3], batch_size)
+    preds_5_xlnet_l_fx, embeddings5_xl_fx = run_inference_fx(test, model_path, GPR_CFG.xlnet_large_model[4], batch_size)
     preds_xlnet_l_fx = (preds_1_xlnet_l_fx + preds_2_xlnet_l_fx + preds_3_xlnet_l_fx + preds_4_xlnet_l_fx + preds_5_xlnet_l_fx) / 5
 
     # model_path = '../input/robertalarge-epoch5-textaugment'
@@ -428,11 +428,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'roberta-large'
     batch_size = 128
-    preds_1_roberta_l_s2_fx, embeddings1_rl_sq2_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_model[0], batch_size)
-    preds_2_roberta_l_s2_fx, embeddings2_rl_sq2_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_model[1], batch_size)
-    preds_3_roberta_l_s2_fx, embeddings3_rl_sq2_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_model[2], batch_size)
-    preds_4_roberta_l_s2_fx, embeddings4_rl_sq2_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_model[3], batch_size)
-    preds_5_roberta_l_s2_fx, embeddings5_rl_sq2_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_model[4], batch_size)
+    preds_1_roberta_l_s2_fx, embeddings1_rl_sq2_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_model[0], batch_size)
+    preds_2_roberta_l_s2_fx, embeddings2_rl_sq2_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_model[1], batch_size)
+    preds_3_roberta_l_s2_fx, embeddings3_rl_sq2_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_model[2], batch_size)
+    preds_4_roberta_l_s2_fx, embeddings4_rl_sq2_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_model[3], batch_size)
+    preds_5_roberta_l_s2_fx, embeddings5_rl_sq2_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_model[4], batch_size)
     preds_roberta_l_s2_fx = (preds_1_roberta_l_s2_fx + preds_2_roberta_l_s2_fx + preds_3_roberta_l_s2_fx + preds_4_roberta_l_s2_fx + preds_5_roberta_l_s2_fx) / 5
 
     model_path = 'allenai/longformer-large-4096-finetuned-triviaqa'
@@ -441,11 +441,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'allenai/longformer-large-4096-finetuned-triviaqa'
     batch_size = 64
-    preds_1_longformer_l_tqa_fx, embeddings1_longformer_tqa_fx = run_inference_fx(test, model_path, ModelPath.longformer_large_tqa_model[0], batch_size)
-    preds_2_longformer_l_tqa_fx, embeddings2_longformer_tqa_fx = run_inference_fx(test, model_path, ModelPath.longformer_large_tqa_model[1], batch_size)
-    preds_3_longformer_l_tqa_fx, embeddings3_longformer_tqa_fx = run_inference_fx(test, model_path, ModelPath.longformer_large_tqa_model[2], batch_size)
-    preds_4_longformer_l_tqa_fx, embeddings4_longformer_tqa_fx = run_inference_fx(test, model_path, ModelPath.longformer_large_tqa_model[3], batch_size)
-    preds_5_longformer_l_tqa_fx, embeddings5_longformer_tqa_fx = run_inference_fx(test, model_path, ModelPath.longformer_large_tqa_model[4], batch_size)
+    preds_1_longformer_l_tqa_fx, embeddings1_longformer_tqa_fx = run_inference_fx(test, model_path, GPR_CFG.longformer_large_tqa_model[0], batch_size)
+    preds_2_longformer_l_tqa_fx, embeddings2_longformer_tqa_fx = run_inference_fx(test, model_path, GPR_CFG.longformer_large_tqa_model[1], batch_size)
+    preds_3_longformer_l_tqa_fx, embeddings3_longformer_tqa_fx = run_inference_fx(test, model_path, GPR_CFG.longformer_large_tqa_model[2], batch_size)
+    preds_4_longformer_l_tqa_fx, embeddings4_longformer_tqa_fx = run_inference_fx(test, model_path, GPR_CFG.longformer_large_tqa_model[3], batch_size)
+    preds_5_longformer_l_tqa_fx, embeddings5_longformer_tqa_fx = run_inference_fx(test, model_path, GPR_CFG.longformer_large_tqa_model[4], batch_size)
     preds_longformer_ltqa_fx = (preds_1_longformer_l_tqa_fx + preds_2_longformer_l_tqa_fx + preds_3_longformer_l_tqa_fx + preds_4_longformer_l_tqa_fx + preds_5_longformer_l_tqa_fx) / 5
 
     model_path = 'roberta-large'
@@ -454,11 +454,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'roberta-large'
     batch_size = 128
-    preds_1_roberta_l_s2_mlm_only_pl_fx, embeddings1_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_mlm_model[0], batch_size)
-    preds_2_roberta_l_s2_mlm_only_pl_fx, embeddings2_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_mlm_model[1], batch_size)
-    preds_3_roberta_l_s2_mlm_only_pl_fx, embeddings3_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_mlm_model[2], batch_size)
-    preds_4_roberta_l_s2_mlm_only_pl_fx, embeddings4_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_mlm_model[3], batch_size)
-    preds_5_roberta_l_s2_mlm_only_pl_fx, embeddings5_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, ModelPath.roberta_large_squad2_mlm_model[4], batch_size)
+    preds_1_roberta_l_s2_mlm_only_pl_fx, embeddings1_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_mlm_model[0], batch_size)
+    preds_2_roberta_l_s2_mlm_only_pl_fx, embeddings2_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_mlm_model[1], batch_size)
+    preds_3_roberta_l_s2_mlm_only_pl_fx, embeddings3_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_mlm_model[2], batch_size)
+    preds_4_roberta_l_s2_mlm_only_pl_fx, embeddings4_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_mlm_model[3], batch_size)
+    preds_5_roberta_l_s2_mlm_only_pl_fx, embeddings5_rl_sq2_mlm_only_pl_fx = run_inference_fx(test, model_path, GPR_CFG.roberta_large_squad2_mlm_model[4], batch_size)
     preds_roberta_l_s2_mlm_only_pl_fx = (preds_1_roberta_l_s2_mlm_only_pl_fx + preds_2_roberta_l_s2_mlm_only_pl_fx + preds_3_roberta_l_s2_mlm_only_pl_fx + preds_4_roberta_l_s2_mlm_only_pl_fx + preds_5_roberta_l_s2_mlm_only_pl_fx) / 5
 
 
@@ -468,11 +468,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'valhalla/bart-large-finetuned-squadv1'
     batch_size = 128
-    preds_1_bl_mlm_rmdp_fx, embeddings1_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.bart_large_squad1_mlm_rmdp_model[0], batch_size)
-    preds_2_bl_mlm_rmdp_fx, embeddings2_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.bart_large_squad1_mlm_rmdp_model[1], batch_size)
-    preds_3_bl_mlm_rmdp_fx, embeddings3_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.bart_large_squad1_mlm_rmdp_model[2], batch_size)
-    preds_4_bl_mlm_rmdp_fx, embeddings4_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.bart_large_squad1_mlm_rmdp_model[3], batch_size)
-    preds_5_bl_mlm_rmdp_fx, embeddings5_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.bart_large_squad1_mlm_rmdp_model[4], batch_size)
+    preds_1_bl_mlm_rmdp_fx, embeddings1_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.bart_large_squad1_mlm_rmdp_model[0], batch_size)
+    preds_2_bl_mlm_rmdp_fx, embeddings2_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.bart_large_squad1_mlm_rmdp_model[1], batch_size)
+    preds_3_bl_mlm_rmdp_fx, embeddings3_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.bart_large_squad1_mlm_rmdp_model[2], batch_size)
+    preds_4_bl_mlm_rmdp_fx, embeddings4_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.bart_large_squad1_mlm_rmdp_model[3], batch_size)
+    preds_5_bl_mlm_rmdp_fx, embeddings5_bl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.bart_large_squad1_mlm_rmdp_model[4], batch_size)
     preds_bl_mlm_rmdp_fx = (preds_1_bl_mlm_rmdp_fx + preds_2_bl_mlm_rmdp_fx + preds_3_bl_mlm_rmdp_fx + preds_4_bl_mlm_rmdp_fx + preds_5_bl_mlm_rmdp_fx) / 5
 
 
@@ -482,11 +482,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'microsoft/deberta-large'
     batch_size = 128
-    preds_1_deberta_l_mlm_rmdp_fx, embeddings1_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_mnli_mlm_rmdp_model[0], batch_size)
-    preds_2_deberta_l_mlm_rmdp_fx, embeddings2_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_mnli_mlm_rmdp_model[1], batch_size)
-    preds_3_deberta_l_mlm_rmdp_fx, embeddings3_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_mnli_mlm_rmdp_model[2], batch_size)
-    preds_4_deberta_l_mlm_rmdp_fx, embeddings4_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_mnli_mlm_rmdp_model[3], batch_size)
-    preds_5_deberta_l_mlm_rmdp_fx, embeddings5_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, ModelPath.deberta_large_mnli_mlm_rmdp_model[4], batch_size)
+    preds_1_deberta_l_mlm_rmdp_fx, embeddings1_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_mnli_mlm_rmdp_model[0], batch_size)
+    preds_2_deberta_l_mlm_rmdp_fx, embeddings2_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_mnli_mlm_rmdp_model[1], batch_size)
+    preds_3_deberta_l_mlm_rmdp_fx, embeddings3_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_mnli_mlm_rmdp_model[2], batch_size)
+    preds_4_deberta_l_mlm_rmdp_fx, embeddings4_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_mnli_mlm_rmdp_model[3], batch_size)
+    preds_5_deberta_l_mlm_rmdp_fx, embeddings5_dl_mlm_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.deberta_large_mnli_mlm_rmdp_model[4], batch_size)
     preds_deberta_l_mlm_rmdp_fx = (preds_1_deberta_l_mlm_rmdp_fx + preds_2_deberta_l_mlm_rmdp_fx + preds_3_deberta_l_mlm_rmdp_fx + preds_4_deberta_l_mlm_rmdp_fx + preds_5_deberta_l_mlm_rmdp_fx) / 5
 
     model_path = 'ahotrod/electra_large_discriminator_squad2_512'
@@ -495,11 +495,11 @@ if __name__ == '__main__':
     CFG.model_path = model_path
     CFG.model_name = 'ahotrod/electra_large_discriminator_squad2_512'
     batch_size = 128
-    preds_1_el_s2_rmdp_fx, embeddings1_el_s2_rmdp_fx = run_inference_fx(test, model_path, ModelPath.electra_large_squad2_rmdp_model[0], batch_size)
-    preds_2_el_s2_rmdp_fx, embeddings2_el_s2_rmdp_fx = run_inference_fx(test, model_path, ModelPath.electra_large_squad2_rmdp_model[1], batch_size)
-    preds_3_el_s2_rmdp_fx, embeddings3_el_s2_rmdp_fx = run_inference_fx(test, model_path, ModelPath.electra_large_squad2_rmdp_model[2], batch_size)
-    preds_4_el_s2_rmdp_fx, embeddings4_el_s2_rmdp_fx = run_inference_fx(test, model_path, ModelPath.electra_large_squad2_rmdp_model[3], batch_size)
-    preds_5_el_s2_rmdp_fx, embeddings5_el_s2_rmdp_fx = run_inference_fx(test, model_path, ModelPath.electra_large_squad2_rmdp_model[4], batch_size)
+    preds_1_el_s2_rmdp_fx, embeddings1_el_s2_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.electra_large_squad2_rmdp_model[0], batch_size)
+    preds_2_el_s2_rmdp_fx, embeddings2_el_s2_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.electra_large_squad2_rmdp_model[1], batch_size)
+    preds_3_el_s2_rmdp_fx, embeddings3_el_s2_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.electra_large_squad2_rmdp_model[2], batch_size)
+    preds_4_el_s2_rmdp_fx, embeddings4_el_s2_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.electra_large_squad2_rmdp_model[3], batch_size)
+    preds_5_el_s2_rmdp_fx, embeddings5_el_s2_rmdp_fx = run_inference_fx(test, model_path, GPR_CFG.electra_large_squad2_rmdp_model[4], batch_size)
     preds_el_s2_rmdp_fx = (preds_1_el_s2_rmdp_fx + preds_2_el_s2_rmdp_fx + preds_3_el_s2_rmdp_fx + preds_4_el_s2_rmdp_fx + preds_5_el_s2_rmdp_fx) / 5
 
 
@@ -530,9 +530,9 @@ if __name__ == '__main__':
 
 
     ### Where to load the gpr weights, embedding and target for GPR inference
-    gpr_path = ModelPath.gpr_path
-    emb_path = ModelPath.emb_path
-    y_path = ModelPath.y_path
+    gpr_path = GPR_CFG.gpr_path
+    emb_path = GPR_CFG.emb_path
+    y_path = GPR_CFG.y_path
 
     embeddings = [embeddings1, embeddings2, embeddings3, embeddings4, embeddings5]
 
@@ -541,3 +541,6 @@ if __name__ == '__main__':
 
     preds_combine = np.mean(gpr_preds_concat, axis=0)
     print(preds_combine)
+
+    test['preds'] = preds_combine
+    test.to_csv(GPR_CFG.output_csv, index=False)

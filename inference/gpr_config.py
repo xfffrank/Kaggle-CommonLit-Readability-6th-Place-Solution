@@ -1,8 +1,29 @@
-class ModelPath:
+class GPR_CFG:
     '''
-    This is the class for locating the transformer models, change 'models_dir' to the directory of the models
+        This is the GPR Config class for saving/loading the .csv files, transformer models, GPR model,
+        and other misc files required for training/inference.
+        Each variable with comment (MUST EXIST) means the following file/folder needs to be exists before running
+        any GPR_training.py or GPR_inference.py.
     '''
-    models_dir = '../../models'
+    models_dir = '../../models' # the directory of all the models checkpoint (MUST EXIST)
+    COMPUTE_CV = False # Set to True if running inference on train.csv, set to False if running inference on test.csv
+    train_csv = '../../commonlitreadabilityprize/train.csv' # original train.csv (MUST EXIST)
+    test_csv = '../../commonlitreadabilityprize/test.csv' # original test.csv (MUST EXIST)
+    output_csv = '../../commonlitreadabilityprize/final.csv' # the path to store the generated output file after inference
+
+    gpr_path = f'{models_dir}/gpr_rbf/best_9_all_y_gpr' # the path to store or load the trained GPR model on the 9 concatenated embeddings
+    emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy' # the path to store or load the 9 concatenated embeddings
+    y_path = f'{models_dir}/gpr_rbf/best_9_all_y_y_new.npy' # the path to store or load the target label
+
+
+    # This is the original out-of-fold validation set used for TRAINING the GPR model. (MUST EXIST)
+    valid_folds = ['../../valid_folds/fold1_valid.csv', 
+                    '../../valid_folds/fold2_valid.csv',
+                    '../../valid_folds/fold3_valid.csv',
+                    '../../valid_folds/fold4_valid.csv',
+                    '../../valid_folds/fold5_valid.csv']
+
+    # The following are for loading each model checkpoint from the 'models' directory. (MUST EXIST)
     roberta_large_model= [f'{models_dir}/exp_180/exp_180_*/roberta-large_seed42_fold0.ckpt',
                         f'{models_dir}/exp_180/exp_180_*/roberta-large_seed42_fold1.ckpt',
                         f'{models_dir}/exp_180/exp_180_*/roberta-large_seed42_fold2.ckpt',
@@ -67,6 +88,3 @@ class ModelPath:
                         ]
 
 
-    gpr_path = f'{models_dir}/gpr_rbf/best_9_all_y_gpr'
-    emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy'
-    y_path = f'{models_dir}/gpr_rbf/best_9_all_y_y_new.npy'
