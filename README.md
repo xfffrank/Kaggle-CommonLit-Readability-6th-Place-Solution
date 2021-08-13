@@ -42,6 +42,13 @@ The main packages used are listed below. Please see the `requirements.txt` for t
 * scikit-learn==0.24.2
 * scipy==1.6.3
 
+## Creating new environment and install dependencies
+```
+$ conda create --name commonlit python=3
+$ conda activate commonlit
+$ pip install -r requirements.txt
+```
+
 ## Data Setup
 * Please add the `train.csv` file from https://www.kaggle.com/c/commonlitreadabilityprize/data as the input.
 
@@ -49,12 +56,41 @@ The main packages used are listed below. Please see the `requirements.txt` for t
 1. Train the listed models in our summary by changing the configurations in `config.py` and running `train.py` in the `training` folder.
     - e.g. To train a roberta-large model, change `model_path` and `model_name` in  `config.py` to `roberta-large` and run `train.py`. Use the same `model_path` and `model_name` as in the "Model Name" column above if no pretraining is needed.
     - For models with mlm pretraining needed, use the original `train.csv` (combined with the provided external data) and run `pretrain.py` to get the pretrained model first. During finetuning, set `model_path` in `config.py` to the pretrained model path.
-2. Train a GPR model by concatenating all of the out-of-fold embeddings for the 9 models.
-    - The script needed is `GPR_training.py` in the `inference` folder.
-    - Suppose the dimension of embeddings is 1024, and the number of samples is 2834 and the number of models is 9, you will get the concatenated embedding of the size (2834, 9*1024) for training the GPR.
+2. Train a GPR model by concatenating all of the out-of-fold (OOF) embeddings for the 9 models.
+    - Suppose the dimension of the embeddings for a single large model is 1024, and the number of samples in the training data is 2834, and total number of models is 9, you will get the concatenated embedding of the size (2834, 9*1024) as inputs for training the GPR model.
+    - Inside the inference folder there is a `gpr_config.py` config file, change the following variables to the file location for saving the GPR model and the relevant files once the training is completed (These path should be the same for the inference as well).
+      ```
+      class GPR_CFG:
+          models_dir = '../../models' # the directory of all the models checkpoint (MUST EXIST)
+          gpr_path = f'{models_dir}/gpr_rbf/best_9_all_y_gpr' # the path to store or load the trained GPR model on the 9 concatenated embeddings
+          emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy' # the path to store or load the 9 concatenated     embeddings
+          y_path = f'{models_dir}/gpr_rbf/best_9_all_y_y_new.npy' # the path to store or load the target label
+      ```
+    - The script needed for training a GPR model is `GPR_training.py` in the `inference` folder.
+      ```
+      $ python GPR_training.py
+      ```
+      Once training is finished, the GPR model, embeddings file, target label will be saved to `gpr_path`, `emb_path`, and `y_path` specified in `GPR_CFG` class.
 
 ## Inference
-* Use `GPR_inference.py` in the `inference` folder to run inference with the trained models.
+* Use `GPR_inference.py` in the `inference` folder to run inference with the GPR model.
+* Inside the inference folder there is a `gpr_config.py` config file, change the following variables to your folder/file location.
+    ```
+    class GPR_CFG:
+        models_dir = '../../models' # the directory of all the models checkpoint (MUST EXIST)
+        COMPUTE_CV = False # Set to True if running inference on train.csv, set to False if running inference on test.csv
+        train_csv = '../../commonlitreadabilityprize/train.csv' # original train.csv (MUST EXIST)
+        test_csv = '../../commonlitreadabilityprize/test.csv' # original test.csv (MUST EXIST)
+        output_csv = '../../commonlitreadabilityprize/final.csv' # the path to store the generated output file after inference
+        gpr_path = f'{models_dir}/gpr_rbf/best_9_all_y_gpr' # the path to load the trained GPR model on the 9 concatenated embeddings
+        emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy' # the path to load the 9 concatenated embeddings
+        y_path = f'{models_dir}/gpr_rbf/best_9_all_y_y_new.npy' # the path to load the target label
+    ```
+* Inside the inference folder run the following GPR inference to return the predictions result in a `final.csv` file with a prediction column appended to the either the original train.csv or test.csv depending if `COMPUTE_CV` is set to True (Use `train.csv`) or False (Use `test.csv`).
+    ```
+    $ python GPR_inference.py
+    ```
+* Once inference is done, the output file `final.csv` with the final predictions will be generated in the location you specified in the variable `output_csv` in `GPR_CFG` class.
 
 ## License
 * All of our solution code is open-sourced under the MIT license as stated in the [competition rules](https://www.kaggle.com/c/commonlitreadabilityprize/rules).

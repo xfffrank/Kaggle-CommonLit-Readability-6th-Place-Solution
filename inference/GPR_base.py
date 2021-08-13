@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 import torch
 
@@ -54,7 +53,6 @@ def train_GPR(embeddings, target, gpr_path, emb_path, y_path):
         mean, cov = gpr(X, full_cov=True, noiseless=False)
     
     gpr_prediction = mean.cpu().numpy()
-#     plt.plot(losses)
     
     print("Saving gpr model, embeddings, and target")
     save_gpr_model(gpr, embeddings, y, gpr_path, emb_path, y_path)
@@ -105,17 +103,3 @@ def get_pyro_emb_preds(embedding_path, y_path, gpr_model_path, test_embedding):
         mean, cov = gpr(X_test, full_cov=True, noiseless=False)
     mean = np.array(mean.cpu())
     return mean
-
-
-'''
-### Example usage
-############# Training GPR model #######################
-
-## The following variables are the filepath for saving the GPR model, the label/target, and the transformer embeddings
-gpr_path = '../input/embeddings/fx_embeddings_and_folds/fx_embeddings/gpr_rbf/gpr_model'
-y_path = '../input/embeddings/fx_embeddings_and_folds/fx_embeddings/gpr_rbf/target.npy'
-emb_path = '../input/embeddings/fx_embeddings_and_folds/fx_embeddings/gpr_rbf/embedding.npy'
-
-## train a GPR on the transformer embeddings
-mean_pred = train_GPR(embeddings, y, gpr_path, emb_path, y_path)
-'''
