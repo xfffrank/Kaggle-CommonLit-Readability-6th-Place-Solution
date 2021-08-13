@@ -3,68 +3,40 @@
 Reference: https://www.kaggle.com/rhtsingh/commonlit-readability-prize-roberta-torch-itpt
 
 '''
-
 import pandas as pd
-import numpy as np
-
-
-train = pd.read_csv('# provide the train csv here #')
-train['excerpt'] = train['excerpt'].apply(lambda x: x.replace('\n',''))  # remove line breaks
-mlm_data = train[['excerpt']]
-mlm_data = mlm_data.rename(columns={'excerpt':'text'})
-
-mlm_data.to_csv('mlm_data.csv', index=False)
-
-
-import argparse
 import logging
 import math
 import os
-import random
-
 import datasets
 from datasets import load_dataset
 from tqdm.auto import tqdm
 from accelerate import Accelerator
-
 import torch
 from torch.utils.data import DataLoader
-
 import transformers
 from transformers import (
     CONFIG_MAPPING, 
-    MODEL_MAPPING, 
     AdamW, 
     AutoConfig, 
     AutoModelForMaskedLM, 
     AutoTokenizer, 
     DataCollatorForLanguageModeling, 
-    SchedulerType, 
     get_scheduler, 
     set_seed
 )
-
 import yaml
-
+from argparse import ArgumentParser
+from config import CFG
 logger = logging.getLogger(__name__)
-MODEL_CONFIG_CLASSES = list(MODEL_MAPPING.keys())
-MODEL_TYPES = tuple(conf.model_type for conf in MODEL_CONFIG_CLASSES)
-
-# from pprint import pprint
-# pprint(MODEL_TYPES, width=3, compact=True)
-
-
-# ### Config
 
 
 class TrainConfig:
+    add_external_data = False
     train_file= 'mlm_data.csv'
     validation_file = 'mlm_data.csv'
     validation_split_percentage= 5
     pad_to_max_length= True
     model_name_or_path= 'ahotrod/electra_large_discriminator_squad2_512'
-    config_name= 'ahotrod/electra_large_discriminator_squad2_512'
-    tokenizer_name= 'ahotrod/electra_large_discriminator_squad2_512'
     use_slow_tokenizer= True
     per_device_train_batch_size= 8
     per_device_eval_batch_size= 8
@@ -77,9 +49,8 @@ class TrainConfig:
     num_warmup_steps= 0
     output_dir= '# specify output dir #'
     seed= 2021
-    model_type= 'electra'
-    max_seq_length= 256
-    line_by_line= True
+    max_seq_length= 300
+    line_by_line= False
     preprocessing_num_workers= 4
     overwrite_cache= True
     mlm_probability= 0.15
@@ -92,19 +63,6 @@ class TrainConfig:
             config_dict[k] = v
         with open(TrainConfig.output_dir + '/hparams.yaml', 'w') as f:
             yaml.dump(config_dict, f, sort_keys=False)
-
-config = TrainConfig()
-
-if config.train_file is not None:
-    extension = config.train_file.split(".")[-1]
-    assert extension in ["csv", "json", "txt"], "`train_file` should be a csv, json or txt file."
-if config.validation_file is not None:
-    extension = config.validation_file.split(".")[-1]
-    assert extension in ["csv", "json", "txt"], "`validation_file` should be a csv, json or txt file."
-if config.output_dir is not None:
-    os.makedirs(config.output_dir, exist_ok=True)
-
-TrainConfig.save_config()
 
 
 def main():
@@ -136,24 +94,9 @@ def main():
     if extension == "txt":
         extension = "text"
     raw_datasets = load_dataset(extension, data_files=data_files)
-    
-    if args.config_name:
-        config = AutoConfig.from_pretrained(args.config_name)
-    elif args.model_name_or_path:
-        config = AutoConfig.from_pretrained(args.model_name_or_path)
-    else:
-        config = CONFIG_MAPPING[args.model_type]()
-        logger.warning("You are instantiating a new config instance from scratch.")
 
-    if args.tokenizer_name:
-        tokenizer = AutoTokenizer.from_pretrained(args.tokenizer_name, use_fast=not args.use_slow_tokenizer)
-    elif args.model_name_or_path:
-        tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=not args.use_slow_tokenizer)
-    else:
-        raise ValueError(
-            "You are instantiating a new tokenizer from scratch. This is not supported by this script."
-            "You can do it from another script, save it, and load it from here, using --tokenizer_name."
-        )
+    config = AutoConfig.from_pretrained(args.model_name_or_path)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=not args.use_slow_tokenizer)
     
     if args.model_name_or_path:
         model = AutoModelForMaskedLM.from_pretrained(
@@ -365,7 +308,50 @@ def main():
                 tokenizer.save_pretrained(args.output_dir)
 
 
+def prepare_args():
+    parser = ArgumentParser()
+
+    parser.add_argument(
+        "--config",
+        action="store",
+        dest="config",
+        help="Configuration scheme",
+        default=None,
+    )
+
+    args = parser.parse_args()
+    print(f'[INFO] Using configuration for {args.config}')
+
+    with open(CFG.pretrain_config_path) as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader)
+        for k, v in cfg[args.config].items():
+            setattr(TrainConfig, k, v)
+
+
 if __name__ == "__main__":
+    prepare_args()
+
+    train = pd.read_csv(CFG.input_file)
+    if TrainConfig.add_external_data:
+        print('[INFO] Adding external data...')
+        ext = pd.read_csv(CFG.external_file)
+        train = pd.concat([train, ext])
+    mlm_data = train[['excerpt']]
+    mlm_data = mlm_data.rename(columns={'excerpt':'text'})
+
+    mlm_data.to_csv('mlm_data.csv', index=False)
+
+    config = TrainConfig()
+    if config.train_file is not None:
+        extension = config.train_file.split(".")[-1]
+        assert extension in ["csv", "json", "txt"], "`train_file` should be a csv, json or txt file."
+    if config.validation_file is not None:
+        extension = config.validation_file.split(".")[-1]
+        assert extension in ["csv", "json", "txt"], "`validation_file` should be a csv, json or txt file."
+    if config.output_dir is not None:
+        os.makedirs(config.output_dir, exist_ok=True)
+    TrainConfig.save_config()
+
     main()
 
 

@@ -1,7 +1,7 @@
 from torch.utils.data import DataLoader
-from transformers import RobertaTokenizer, logging
+from transformers import logging
 logging.set_verbosity_warning()
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, EarlyStopping, StochasticWeightAveraging
+from pytorch_lightning.callbacks import LearningRateMonitor
 from pytorch_lightning.loggers import TensorBoardLogger
 from pytorch_lightning import seed_everything
 
@@ -15,27 +15,22 @@ from inference import predict_dataloader, RMSE
 
 
 def train_kfold(df):
-    if CFG.test_mode: print('='*20 + f' [INFO] Test mode on ' + '='*20)
     tokenizer = get_tokenizer(CFG.model_name)
     print(f'Model path: {CFG.model_path}')
     if CFG.env in ['local', 'colab']:
         exp_id = CFG.get_next_exp_id()
         CFG.save_config(exp_id)
         print('='*20 + f'Experiment ID: {exp_id}' + '='*20)
-    
     oof = np.zeros_like(df.target, dtype=float)
     ckpt_dir = '/kaggle/working/' if CFG.env == 'kaggle' else os.path.join(CFG.output_dir, f'exp_{str(exp_id).zfill(3)}')
 
-    for k in range(0,5):
+    for k in range(CFG.num_folds):
         train_one_fold(df, oof, k, tokenizer, ckpt_dir, exp_id)
-        if CFG.test_mode:
-            break
-    
-    if not CFG.test_mode:
-        msg = f'CV RMSE: {RMSE(df.target.values, oof)}'
-        print(msg)
-        if CFG.env in ['local', 'colab']:
-            log_message(msg, exp_id)
+
+    msg = f'CV RMSE: {RMSE(df.target.values, oof)}'
+    print(msg)
+    if CFG.env in ['local', 'colab']:
+        log_message(msg, exp_id)
 
 
 def train_one_fold(df, oof, fold_num, tokenizer, ckpt_dir, exp_id):
@@ -45,31 +40,10 @@ def train_one_fold(df, oof, fold_num, tokenizer, ckpt_dir, exp_id):
     train_data = df[df['kfold'] != k]
     val_data = df[df['kfold'] == k]
 
-    if CFG.use_smart_batching:
-        print('[INFO] Using smart batching...')
-        train_dataset = SmartBatchingDataset(train_data, tokenizer)
-        sampler = SmartBatchingSampler(
-            data_source=train_dataset._data,
-            batch_size=CFG.batch_sz
-        )
-        collate_fn = SmartBatchingCollate(
-            targets=train_dataset._targets,
-            max_length=CFG.max_len,
-            pad_token_id=tokenizer.pad_token_id
-        )
-        train_loader = DataLoader(
-            dataset=train_dataset,
-            batch_size=CFG.batch_sz,
-            sampler=sampler,
-            collate_fn=collate_fn,
-            num_workers=CFG.num_workers,
-            pin_memory=True
-        )
-    else:
-        train_dataset = CommonLitDataset(train_data, tokenizer, shuffle=CFG.fix_data_order)
-        # use shuffle=False to fix data order in each epoch
-        epoch_shuffle = not CFG.fix_data_order
-        train_loader = DataLoader(train_dataset, batch_size=CFG.batch_sz, shuffle=epoch_shuffle, num_workers=CFG.num_workers, pin_memory=True)     
+    train_dataset = CommonLitDataset(train_data, tokenizer, shuffle=CFG.fix_data_order)
+    # use shuffle=False to fix data order in each epoch
+    epoch_shuffle = not CFG.fix_data_order
+    train_loader = DataLoader(train_dataset, batch_size=CFG.batch_sz, shuffle=epoch_shuffle, num_workers=CFG.num_workers, pin_memory=True)     
     val_dataset = CommonLitDataset(val_data, tokenizer)
     val_loader = DataLoader(val_dataset, batch_size=CFG.batch_sz*4, shuffle=False, num_workers=CFG.num_workers, pin_memory=False)
     print(f'Train size: {len(train_dataset)}')
@@ -90,19 +64,19 @@ def train_one_fold(df, oof, fold_num, tokenizer, ckpt_dir, exp_id):
         ),
     ]
 
-    log_fold = 0
-    if CFG.env == 'local' and CFG.decay != 'constant' and k == log_fold:
+    logging_fold = 0
+    if CFG.env == 'local' and CFG.decay != 'constant' and k == logging_fold:
         print('[INFO] Logging learning rates only for the first fold.')
         lr_monitor = LearningRateMonitor(logging_interval='step')
         callbacks.append(lr_monitor)
-    if k == log_fold:
+    if k == logging_fold:
         logger = None if CFG.env in ['kaggle', 'colab'] else TensorBoardLogger(save_dir=CFG.log_dir, name='logs', version=f'exp_{str(exp_id).zfill(3)}')
     else:
         logger = None
 
     model = CommonLitModel(train_steps, val_size)
     print('Model created!')
-    trainer = pl.Trainer(gpus=CFG.device, callbacks=callbacks, max_epochs=CFG.epochs, num_sanity_val_steps=2, logger=logger, val_check_interval=CFG.val_check_interval, progress_bar_refresh_rate=CFG.progress_bar, accumulate_grad_batches=CFG.accumulate_grad_batches, precision=CFG.precision, stochastic_weight_avg=CFG.swa)
+    trainer = pl.Trainer(gpus=CFG.device, callbacks=callbacks, max_epochs=CFG.epochs, num_sanity_val_steps=2, logger=logger, progress_bar_refresh_rate=CFG.progress_bar, accumulate_grad_batches=CFG.accumulate_grad_batches, precision=CFG.precision, stochastic_weight_avg=CFG.swa)
     print('Start training...')
     trainer.fit(model, train_loader, val_loader)
 
@@ -130,12 +104,13 @@ def train_one_fold(df, oof, fold_num, tokenizer, ckpt_dir, exp_id):
 
 
 def main():
-    train_df = pd.read_csv('../inputs/train.csv')
+    train_df = pd.read_csv(CFG.input_file)
     train_df = create_folds(train_df, num_splits=CFG.num_folds, random_seed=CFG.seed)
     train_kfold(train_df)
 
 
 if __name__ == '__main__':
+    prepare_args()
     main()
 
 

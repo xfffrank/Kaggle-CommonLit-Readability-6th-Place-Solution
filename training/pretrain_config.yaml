@@ -1,0 +1,40 @@
+roberta-large:
+  model_name_or_path: roberta-large
+  num_train_epochs: 1
+  output_dir: path_to_output_directory
+  add_external_data: false
+
+
+deberta-large:
+  model_name_or_path: deberta-large
+  num_train_epochs: 1
+  output_dir: path_to_output_directory
+  add_external_data: false
+
+
+roberta-large-squad2:
+  model_name_or_path: deepset/roberta-large-squad2
+  num_train_epochs: 5
+  output_dir: path_to_output_directory
+  add_external_data: true
+
+
+bart-large:
+  model_name_or_path: valhalla/bart-large-finetuned-squadv1
+  num_train_epochs: 5
+  output_dir: path_to_output_directory
+  add_external_data: true
+
+
+deberta-large-mnli:
+  model_name_or_path: microsoft/deberta-large-mnli
+  num_train_epochs: 5
+  output_dir: path_to_output_directory
+  add_external_data: true
+
+
+# test:  # for testing
+#   model_name_or_path: distilbert-base-uncased
+#   num_train_epochs: 2
+#   output_dir: /home/oatos/Documents/code/kaggle/Kaggle-CommonLit-6th-place-solution/pretrain_test/distilbert
+#   add_external_data: false

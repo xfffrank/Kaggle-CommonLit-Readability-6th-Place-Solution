@@ -15,13 +15,7 @@ class GPR_CFG:
     emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy' # the path to store or load the 9 concatenated embeddings
     y_path = f'{models_dir}/gpr_rbf/best_9_all_y_y_new.npy' # the path to store or load the target label
 
-
-    # This is the original out-of-fold validation set used for TRAINING the GPR model. (MUST EXIST)
-    valid_folds = ['../../valid_folds/fold1_valid.csv', 
-                    '../../valid_folds/fold2_valid.csv',
-                    '../../valid_folds/fold3_valid.csv',
-                    '../../valid_folds/fold4_valid.csv',
-                    '../../valid_folds/fold5_valid.csv']
+    seed = 42  # for creating kfolds
 
     # The following are for loading each model checkpoint from the 'models' directory. (MUST EXIST)
     roberta_large_model= [f'{models_dir}/exp_180/exp_180_*/roberta-large_seed42_fold0.ckpt',

@@ -1,23 +1,14 @@
 '''
 This is for testing the CV of a single model.
 '''
-
-from numpy.core.defchararray import mod
-from sklearn.model_selection import KFold, StratifiedKFold
-from sklearn.svm import SVR
-from sklearn.linear_model import Ridge
 from torch.utils.data import DataLoader
-from transformers import RobertaTokenizer, logging
+from transformers import logging
 logging.set_verbosity_error()
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
-from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning import seed_everything
 import torch
 
 import pandas as pd
 import gc
 import numpy as np
-import os
 from tqdm import tqdm
 from utils import *
 from networks import *

@@ -1,19 +1,48 @@
 import numpy as np
+import pandas as pd
 import os
 from tqdm import tqdm
 import torch
+from sklearn.model_selection import StratifiedKFold
 
 import pyro
 import pyro.contrib.gp as gp
-import pyro.distributions as dist
-from pyro.contrib.gp.kernels import Combination, Sum
 smoke_test = ('CI' in os.environ)  # ignore; used to check code integrity in the Pyro repo
 # assert pyro.__version__.startswith('1.6.0')
-
-# https://pyro.ai/examples/gp.html
-
 device = torch.device('cuda:0')
 
+
+# reference: https://www.kaggle.com/abhishek/step-1-create-folds
+def create_folds(df, num_splits, random_seed):
+    # we create a new column called kfold and fill it with -1
+    df["kfold"] = -1
+
+    # calculate number of bins by Sturge's rule
+    # I take the floor of the value, you can also
+    # just round it
+    num_bins = int(np.floor(1 + np.log2(len(df))))
+    
+    # Bin values into discrete intervals.
+    df.loc[:, "bins"] = pd.cut(
+        df["target"], bins=num_bins, labels=False
+    )
+    
+    # initiate the kfold class from model_selection module
+    kf = StratifiedKFold(n_splits=num_splits, shuffle=True, random_state=random_seed)
+    
+    # fill the new kfold column
+    # note that, instead of targets, we use bins!
+    for f, (t_, v_) in enumerate(kf.split(X=df, y=df.bins.values)):
+        df.loc[v_, 'kfold'] = f
+    
+    # drop the bins column
+    # df = df.drop("bins", axis=1)
+
+    # return dfframe with folds
+    return df
+
+
+# reference: https://pyro.ai/examples/gp.html
 def train_GPR(embeddings, target, gpr_path, emb_path, y_path):
     """
     GPR training: The GPR model takes in the embeddings and the label/target of the samples
@@ -58,6 +87,7 @@ def train_GPR(embeddings, target, gpr_path, emb_path, y_path):
     save_gpr_model(gpr, embeddings, y, gpr_path, emb_path, y_path)
     
     return gpr_prediction
+
 
 def save_gpr_model(gpr, embedding, y, gpr_path, embedding_path, y_path):
     """

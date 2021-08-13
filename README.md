@@ -22,40 +22,36 @@
 
 ## Archive Contents
 * `training` folder: code for training transformer models.
+    - `pretrain.py`: MLM pretraining script.
+    - `train.py`: Finetuning script.
 * `inference` folder: training and inference code for the GPR model
-    - `GPR_base.py`: utility script for GPR
     - `GPR_training.py`: GPR training script
-    - `GPR_inference.py`: inference with GPR for our final submission
-* `external_data` folder: external data for the use of pretraining. The data come from the same url as in `url_legal` of the original `train.csv` and we only used those with CC-BY and CC-BY-SA licenses.
+    - `GPR_inference.py`: Inference with GPR for our final submission
+* `external_data` folder: external data for the use of pretraining. The data come from the same url as in `url_legal` of the original `train.csv` and we only used those with CC-BY and CC-BY-SA licenses. Specifically, we scraped the texts from the original URLs and used the same IDs in the csv file. We’ve also scraped some texts from “https://kids.frontiersin.org” which do not correspond to any ID in the training file, so the ID column is empty.
 
 ## Hardware
 * RTX 3090 * 2
 
 ## Software
-The main packages used are listed below. Please see the `requirements.txt` for the complete list.
-* pytorch-lightning==1.3.1
-* torch==1.8.1+cu111
-* pyro-api==0.1.2
-* pyro-ppl==1.6.0
-* pandas==1.2.4
-* numpy==1.19.5
-* scikit-learn==0.24.2
-* scipy==1.6.3
+Please see the `requirements.txt` for the dependencies.
 
-## Creating new environment and install dependencies
+## Environment setup
 ```
-$ conda create --name commonlit python=3
+$ conda create --name commonlit python=3.8
 $ conda activate commonlit
 $ pip install -r requirements.txt
 ```
 
-## Data Setup
-* Please add the `train.csv` file from https://www.kaggle.com/c/commonlitreadabilityprize/data as the input.
+* Note that if you are using GPU, you need to install the matched torch version. e.g. If you are using cuda 11.1, you need to install `torch` with `pip install torch==1.8.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html`.
+
+## Configuration Setup
+* Fill the "set up" section in `config.py`.
 
 ## Training
-1. Train the listed models in our summary by changing the configurations in `config.py` and running `train.py` in the `training` folder.
-    - e.g. To train a roberta-large model, change `model_path` and `model_name` in  `config.py` to `roberta-large` and run `train.py`. Use the same `model_path` and `model_name` as in the "Model Name" column above if no pretraining is needed.
-    - For models with mlm pretraining needed, use the original `train.csv` (combined with the provided external data) and run `pretrain.py` to get the pretrained model first. During finetuning, set `model_path` in `config.py` to the pretrained model path.
+1. Train the models in the [model overview](#Model-overview-of-our-final-submission).
+    1. Pre-train models listed in `pretrain_config.yaml`. e.g. For the roberta-large model, run `python pretrain.py --config roberta-large`. Remember to fill the `output_dir` where the checkpoint will be saved.
+    2. Finetune models listed in `finetune_config.yaml`. e.g. For the roberta-large-mlm model, run `python train.py --config roberta-large-mlm`. For models finetuned on a pretrained checkpoint, remember to replace the `model_path` with the directory that contains the checkpoint.
+
 2. Train a GPR model by concatenating all of the out-of-fold (OOF) embeddings for the 9 models.
     - Suppose the dimension of the embeddings for a single large model is 1024, and the number of samples in the training data is 2834, and total number of models is 9, you will get the concatenated embedding of the size (2834, 9*1024) as inputs for training the GPR model.
     - Inside the inference folder there is a `gpr_config.py` config file, change the following variables to the file location for saving the GPR model and the relevant files once the training is completed (These path should be the same for the inference as well).

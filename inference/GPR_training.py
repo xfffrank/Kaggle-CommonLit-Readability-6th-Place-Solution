@@ -1,9 +1,5 @@
-import re
 import os
 import gc
-import sys
-import math
-import time
 import random
 import numpy as np
 import pandas as pd
@@ -14,19 +10,16 @@ warnings.filterwarnings('ignore')
 
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import normalize
-from joblib import dump, load
 import gc
 
 import torch
-import torchvision
 import torch.nn as nn
-from torch.nn import Parameter
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
 from transformers import (AutoModel, AutoConfig, AutoTokenizer)
 
-from GPR_base import train_GPR
+from GPR_base import train_GPR, create_folds
 from gpr_config import GPR_CFG
 
 train_data = pd.read_csv(GPR_CFG.train_csv)
@@ -183,6 +176,7 @@ def predict_dataloader(loader, model, output_features=False):
     embeddings = np.concatenate(embeddings)
     return preds, embeddings
 
+
 class CommonLitDataset(Dataset):
     def __init__(self, df, tokenizer, shuffle=False):
         self.df = df
@@ -203,6 +197,7 @@ class CommonLitDataset(Dataset):
             return token['input_ids'].squeeze(), token['attention_mask'].squeeze(), target
         else:
             return token['input_ids'].squeeze(), token['attention_mask'].squeeze()
+
 
 class AttentionHead(nn.Module):
     def __init__(self, in_features, hidden_dim):
@@ -326,12 +321,6 @@ class CommonLitModel(pl.LightningModule):
                 # mask = torch.cat([mask, pooler_mask], axis=1)
             else:
                 x = out['last_hidden_state'] 
-            # return last 12 layers
-#             last_no_layers = -4
-#             hidden_states = out['hidden_states']
-#             pooled_output = torch.cat(tuple([hidden_states[i] for i in np.arange(last_no_layers, 0)]), dim=-1) # [-4, -3, -2, -1]
-#             pooled_output = pooled_output[:, 0, :]
-
             out = self.head(x)
         elif CFG.backbone_out == 'conv1d':
             x = out['last_hidden_state']
@@ -357,7 +346,8 @@ class CommonLitModel(pl.LightningModule):
         out = self.dropout(out)
         out = self.clf(out).squeeze()
         return out, pooled_output
-    
+
+
 def run_inference_fx(fold_df, model_name, ckpt_path, batch_size):
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
@@ -379,14 +369,17 @@ def run_inference_fx(fold_df, model_name, ckpt_path, batch_size):
 
     return preds, embeddings
 
+
 if __name__ == '__main__':
 
     ### OOF folds for GPR training
-    fold1_valid_fx = pd.read_csv(GPR_CFG.valid_folds[0])
-    fold2_valid_fx = pd.read_csv(GPR_CFG.valid_folds[1])
-    fold3_valid_fx = pd.read_csv(GPR_CFG.valid_folds[2])
-    fold4_valid_fx = pd.read_csv(GPR_CFG.valid_folds[3])
-    fold5_valid_fx = pd.read_csv(GPR_CFG.valid_folds[4])
+    train_df = pd.read_csv(GPR_CFG.train_csv)
+    train_df = create_folds(train_df, num_splits=CFG.num_folds, random_seed=GPR_CFG.seed)
+    fold1_valid_fx = train_df[train_df['kfold'] == 0].reset_index(drop=True)
+    fold2_valid_fx = train_df[train_df['kfold'] == 1].reset_index(drop=True)
+    fold3_valid_fx = train_df[train_df['kfold'] == 2].reset_index(drop=True)
+    fold4_valid_fx = train_df[train_df['kfold'] == 3].reset_index(drop=True)
+    fold5_valid_fx = train_df[train_df['kfold'] == 4].reset_index(drop=True)
 
     ## Load embeddings
     model_path = 'roberta-large'

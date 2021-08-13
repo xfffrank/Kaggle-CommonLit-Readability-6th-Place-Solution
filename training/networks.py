@@ -1,11 +1,8 @@
 import pytorch_lightning as pl
-from pytorch_lightning.metrics import Accuracy
-from transformers import RobertaTokenizer, RobertaModel, AdamW, get_cosine_schedule_with_warmup, get_linear_schedule_with_warmup, get_constant_schedule_with_warmup, AutoConfig
+from transformers import AdamW, get_cosine_schedule_with_warmup, get_linear_schedule_with_warmup, get_constant_schedule_with_warmup, AutoConfig
 import torch
 from torch import nn
-import torch.nn.functional as F
 import transformers
-# import torch_optimizer as optim
 
 from config import CFG
 
@@ -38,14 +35,11 @@ class CommonLitModel(pl.LightningModule):
         self.config = self.get_config()
         self.backbone = self.get_backbone(self.config)
         self.num_labels = 1
-
+        self.clf = nn.Linear(self.config.hidden_size, self.num_labels)
         if CFG.dropout > 0:
             self.dropout = nn.Dropout(CFG.dropout)
         if CFG.backbone_out == 'attention':
-            hidden_sz = self.config.hidden_size if CFG.attention_hidden_sz is None else CFG.attention_hidden_sz
-            self.head = AttentionHead(self.config.hidden_size, hidden_sz)
- 
-        self.clf = nn.Linear(self.config.hidden_size, self.num_labels)
+            self.head = AttentionHead(self.config.hidden_size, self.config.hidden_size)
         if 'large' in CFG.model_name:
             # Large models perform better when using the weight initialisation method.
             self.layer_norm = nn.LayerNorm(self.config.hidden_size)
@@ -142,8 +136,6 @@ class CommonLitModel(pl.LightningModule):
             if 'pooler_output' in out.keys():
                 pooler = out['pooler_output'].reshape((out['pooler_output'].shape[0], 1, self.config.hidden_size))
                 x = torch.cat([out['last_hidden_state'], pooler],axis=1)  # (batch size, sequence len + 1, hidden size)
-                # pooler_mask = torch.ones((out['pooler_output'].shape[0], 1)).to(f'cuda:{CFG.device[0]}')
-                # mask = torch.cat([mask, pooler_mask], axis=1)
             else:
                 x = out['last_hidden_state']
             out = self.head(x)
@@ -185,12 +177,8 @@ class CommonLitModel(pl.LightningModule):
         self.log("val_loss", loss)
         
     def configure_optimizers(self):
-        if CFG.use_grouped_params:
-            params = self.get_optimizer_params_2()
-            optimizer = AdamW(params, weight_decay=CFG.wts_decay, betas=CFG.betas)
-        else:
-            params = self.parameters()
-            optimizer = AdamW(params, lr=CFG.learning_rate, weight_decay=CFG.wts_decay, betas=CFG.betas)
+        params = self.parameters()
+        optimizer = AdamW(params, lr=CFG.learning_rate, weight_decay=CFG.wts_decay, betas=CFG.betas)
         total_steps = CFG.epochs * self.train_steps
         warmup_steps = int(CFG.warmup_ratio * total_steps)
         print(f'[INFO] Total steps: {total_steps}')
@@ -212,125 +200,6 @@ class CommonLitModel(pl.LightningModule):
             'name': 'learning_rate'
         }
         return [optimizer], [scheduler]
-
-    def config_group_params(self):
-        params = list(self.named_parameters())
-        grouped_parameters = [
-            {"params": [p for n, p in params if 'backbone' in n], 'lr': CFG.learning_rate},
-            {"params": [p for n, p in params if 'backbone' not in n], 'lr': CFG.non_backbone_lr},
-        ]
-        return grouped_parameters
-
-    # credit: https://www.kaggle.com/andretugan/pre-trained-roberta-solution-in-pytorch/notebook
-    def get_optimizer_params_3(self):
-        backbone_params = self.backbone.named_parameters()
-        attention_params = self.head.named_parameters()
-        regressor_params = self.clf.named_parameters()
-
-        attention_group = [params for (name, params) in attention_params]
-        regressor_group = [params for (name, params) in regressor_params]
-
-        parameters = []
-        parameters.append({"params": attention_group})
-        parameters.append({"params": regressor_group})
-
-        for layer_num, (name, params) in enumerate(backbone_params):
-            weight_decay = 0.0 if "bias" in name else 0.01
-            lr = CFG.learning_rate
-            if layer_num >= 69:        
-                lr = 5e-5
-            if layer_num >= 133:
-                lr = 1e-4
-            parameters.append({"params": params,
-                            "weight_decay": weight_decay,
-                            "lr": lr})
-        return parameters
-
-    def get_optimizer_params(self):
-        # differential learning rate and weight decay
-        # param_optimizer = list(model.named_parameters())
-        no_decay = ['bias', 'gamma', 'beta']
-        group1=['layer.0.','layer.1.','layer.2.','layer.3.']
-        group2=['layer.4.','layer.5.','layer.6.','layer.7.']    
-        group3=['layer.8.','layer.9.','layer.10.','layer.11.']
-        group_all=['layer.0.','layer.1.','layer.2.','layer.3.','layer.4.','layer.5.','layer.6.','layer.7.','layer.8.','layer.9.','layer.10.','layer.11.']
-        optimizer_parameters = [
-            {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and not any(nd in n for nd in group_all)],'weight_decay': 0.01},
-            {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and any(nd in n for nd in group1)],'weight_decay': 0.01, 'lr': CFG.learning_rate/2.6},
-            {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and any(nd in n for nd in group2)],'weight_decay': 0.01, 'lr': CFG.learning_rate},
-            {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and any(nd in n for nd in group3)],'weight_decay': 0.01, 'lr': CFG.learning_rate*2.6},
-            {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and not any(nd in n for nd in group_all)],'weight_decay': 0.0},
-            {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and any(nd in n for nd in group1)],'weight_decay': 0.0, 'lr': CFG.learning_rate/2.6},
-            {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and any(nd in n for nd in group2)],'weight_decay': 0.0, 'lr': CFG.learning_rate},
-            {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and any(nd in n for nd in group3)],'weight_decay': 0.0, 'lr': CFG.learning_rate*2.6},
-            {'params': [p for n, p in self.named_parameters() if "backbone" not in n], 'lr':1e-3, "momentum" : 0.99, 'weight_decay': 0.01},
-        ]
-        return optimizer_parameters
-
-    def get_optimizer_params_2(self):
-        # layerwise parameters
-        num_layers = 0
-        if 'distil' in CFG.model_name:
-            num_layers = 6
-        elif 'base' in CFG.model_name:
-            num_layers = 12
-        elif 'large' in CFG.model_name:
-            num_layers = 24
-        else:
-            raise NotImplementedError()
-        print(f'[INFO] Num of bert layers: {num_layers}')
-
-        no_decay = ['bias', 'gamma', 'beta']
-        group_all = [f'layer.{k}.' for k in range(num_layers)]
-        # group_all=['layer.0.','layer.1.','layer.2.','layer.3.','layer.4.','layer.5.','layer.6.','layer.7.','layer.8.','layer.9.','layer.10.','layer.11.']
-
-        w_decay_params = []
-        for num in range(0, num_layers):
-            p = {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and f'layer.{num}.' in n], 'weight_decay': CFG.wts_decay, 'lr': CFG.learning_rate * CFG.lr_epsilon ** (num_layers - num - 1)}
-            w_decay_params.append(p)
-        
-        wo_decay_params = []
-        for num in range(0, num_layers):
-            p = {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and f'layer.{num}.' in n], 'weight_decay': 0.0, 'lr': CFG.learning_rate * CFG.lr_epsilon ** (num_layers - num - 1)}
-            wo_decay_params.append(p)
-        
-        other_params = [
-            {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and not any(nd in n for nd in group_all)],'weight_decay': CFG.wts_decay},
-            {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and not any(nd in n for nd in group_all)],'weight_decay': 0.0},
-            {'params': [p for n, p in self.named_parameters() if "backbone" not in n], 'lr': CFG.non_backbone_lr, 'weight_decay': CFG.wts_decay}
-        ]
-
-        optimizer_parameters = w_decay_params + wo_decay_params + other_params
-        return optimizer_parameters
-
-    def get_optimizer_params_large(self):
-        num_layers = 24
-        print(f'[INFO] Num of bert layers: {num_layers}')
-
-        no_decay = ['bias', 'gamma', 'beta']
-        group_all = [f'layer.{k}.' for k in range(num_layers)]
-
-        params_list = []
-        for num in range(0, num_layers):
-            if num < 8:
-                factor = 1 / 2.6
-            elif num < 16:
-                factor = 1
-            else:
-                factor = 2.6
-            p_w_decay = {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and f'layer.{num}.' in n], 'weight_decay': CFG.wts_decay, 'lr': CFG.learning_rate * factor}
-            p_wo_decay = {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and f'layer.{num}.' in n], 'weight_decay': 0.0, 'lr': CFG.learning_rate * factor}
-            params_list.append(p_w_decay)
-            params_list.append(p_wo_decay)
-        
-        other_params = [
-            {'params': [p for n, p in self.backbone.named_parameters() if not any(nd in n for nd in no_decay) and not any(nd in n for nd in group_all)],'weight_decay': CFG.wts_decay},
-            {'params': [p for n, p in self.backbone.named_parameters() if any(nd in n for nd in no_decay) and not any(nd in n for nd in group_all)],'weight_decay': 0.0},
-            {'params': [p for n, p in self.named_parameters() if "backbone" not in n], 'lr': CFG.non_backbone_lr, 'weight_decay': CFG.wts_decay}
-        ]
-
-        optimizer_parameters = params_list + other_params
-        return optimizer_parameters
     
     def loss_fn(self, y_pred, y_true, mode='mean'):
         """MSE"""

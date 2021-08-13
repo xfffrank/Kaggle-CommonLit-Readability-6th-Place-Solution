@@ -1,0 +1,103 @@
+# The following configurations are in accordance with the model overview in the README file
+
+
+roberta-large-mlm:
+  model_path: path_to_pretrained_directory  # pretrained model path
+  model_name: roberta-large
+  dropout: 0.3
+  remove_dp_in_bert: false
+  reinit_layer: 0
+  warmup_ratio: 0
+  fix_data_order: true
+
+
+deberta-large-mlm:
+  model_path: path_to_pretrained_directory  # pretrained model path
+  model_name: deberta-large
+  dropout: 0.3
+  remove_dp_in_bert: false
+  reinit_layer: 0
+  warmup_ratio: 0
+  fix_data_order: true
+
+
+xlnet-large-cased:
+  model_path: xlnet-large-cased
+  model_name: xlnet-large-cased
+  dropout: 0.3
+  remove_dp_in_bert: false
+  reinit_layer: 0
+  warmup_ratio: 0.06
+  fix_data_order: true
+
+
+roberta-large-squad2:
+  model_path: deepset/roberta-large-squad2
+  model_name: roberta-large
+  dropout: 0.3
+  remove_dp_in_bert: false
+  reinit_layer: 3
+  warmup_ratio: 0.06
+  fix_data_order: true
+
+
+roberta-large-squad2-mlm:
+  model_path: path_to_pretrained_directory  # pretrained model path
+  model_name: roberta-large
+  dropout: 0.3
+  remove_dp_in_bert: false
+  reinit_layer: 3
+  warmup_ratio: 0.06
+  fix_data_order: false
+  precision: 16
+
+
+longformer-large:
+  model_path: allenai/longformer-large-4096-finetuned-triviaqa
+  model_name: allenai/longformer-large-4096-finetuned-triviaqa
+  dropout: 0.3
+  remove_dp_in_bert: false
+  reinit_layer: 3
+  warmup_ratio: 0.06
+  fix_data_order: true
+  precision: 16
+
+
+bart-large-mlm:
+  model_path: path_to_pretrained_directory  # pretrained model path
+  model_name: valhalla/bart-large-finetuned-squadv1
+  dropout: 0.3
+  remove_dp_in_bert: true
+  reinit_layer: 3
+  warmup_ratio: 0.06
+  fix_data_order: false
+
+
+deberta-large-mnli-mlm:
+  model_path: path_to_pretrained_directory  # pretrained model path
+  model_name: microsoft/deberta-large-mnli
+  dropout: 0.3
+  remove_dp_in_bert: true
+  reinit_layer: 3
+  warmup_ratio: 0.06
+  fix_data_order: false
+
+
+electra-large:
+  model_path: ahotrod/electra_large_discriminator_squad2_512
+  model_name: ahotrod/electra_large_discriminator_squad2_512
+  dropout: 0.3
+  remove_dp_in_bert: true
+  reinit_layer: 3
+  warmup_ratio: 0.06
+  fix_data_order: false
+
+
+# test:  # for testing
+#   model_path: distilbert-base-uncased  # pretrained model path
+#   model_name: distilbert-base-uncased
+#   dropout: 0.3
+#   remove_dp_in_bert: true
+#   reinit_layer: 0
+#   warmup_ratio: 0.06
+#   fix_data_order: false
