@@ -42,15 +42,28 @@ $ conda activate commonlit
 $ pip install -r requirements.txt
 ```
 
-* Note that if you are using GPU, you need to install the matched torch version. e.g. If you are using cuda 11.1, you need to install `torch` with `pip install torch==1.8.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html`.
+* Note that if you are using GPU, you need to install the matched torch version. e.g. If you are using cuda 11.1, you need to install `torch` with
+```
+$ pip install torch==1.8.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html
+```
 
 ## Configuration Setup
 * Fill the "set up" section in `config.py`.
 
 ## Training
 1. Train the models in the [model overview](#Model-overview-of-our-final-submission).
-    1. Pre-train models listed in `pretrain_config.yaml`. e.g. For the roberta-large model, run `python pretrain.py --config roberta-large`. Remember to fill the `output_dir` where the checkpoint will be saved.
-    2. Finetune models listed in `finetune_config.yaml`. e.g. For the roberta-large-mlm model, run `python train.py --config roberta-large-mlm`. For models finetuned on a pretrained checkpoint, remember to replace the `model_path` with the directory that contains the checkpoint.
+    1. Pre-train models listed in `pretrain_config.yaml`.  
+        e.g. For the roberta-large model, run
+        ```
+        $ python pretrain.py --config roberta-large
+        ```
+        Remember to fill the `output_dir` where the checkpoint will be saved.
+    2. Finetune models listed in `finetune_config.yaml`.   
+        e.g. For the roberta-large-mlm model, run
+        ```
+        $ python train.py --config roberta-large-mlm
+        ```
+        For models finetuned on a pretrained checkpoint, remember to replace the `model_path` with the directory that contains the checkpoint.
 
 2. Train a GPR model by concatenating all of the out-of-fold (OOF) embeddings for the 9 models.
     - Suppose the dimension of the embeddings for a single large model is 1024, and the number of samples in the training data is 2834, and total number of models is 9, you will get the concatenated embedding of the size (2834, 9*1024) as inputs for training the GPR model.
