@@ -1,6 +1,7 @@
 # Kaggle-CommonLit-6th-Place-Solution
 
 * Solution summary: https://www.kaggle.com/c/commonlitreadabilityprize/discussion/258554
+* Notebook link: https://www.kaggle.com/xyzdivergence/gpr-final
 
 ## Model overview of our final submission
 
@@ -72,7 +73,7 @@ $ pip install torch==1.8.1+cu111 -f https://download.pytorch.org/whl/torch_stabl
     - Suppose the dimension of the embeddings for a single large model is 1024, and the number of samples in the training data is 2834, and total number of models is 9, you will get the concatenated embedding of the size (2834, 9*1024) as inputs for training the GPR model.
     - Inside the inference folder there is a `gpr_config.py` config file, change the following variables to the file location for saving the GPR model and the relevant files once the training is completed (These path should be the same for the inference as well).
         - Note that the checkpoint paths pointing to the specific models in `GPR_CFG` also need to be changed accordingly.
-      ```
+      ```python
       class GPR_CFG:
           models_dir = '../../models' # the directory of all the models checkpoint (MUST EXIST)
           train_csv = '../../commonlitreadabilityprize/train.csv' # original train.csv (MUST EXIST)
@@ -89,13 +90,13 @@ $ pip install torch==1.8.1+cu111 -f https://download.pytorch.org/whl/torch_stabl
 ## Inference
 * Use `GPR_inference.py` in the `inference` folder to run inference with the GPR model.
 * Inside the inference folder there is a `gpr_config.py` config file, change the following variables to your folder/file location.
-    ```
+    ```python
     class GPR_CFG:
         models_dir = '../../models' # the directory of all the models checkpoint (MUST EXIST)
         COMPUTE_CV = False # Set to True if running inference on train.csv, set to False if running inference on test.csv
         train_csv = '../../commonlitreadabilityprize/train.csv' # original train.csv (MUST EXIST)
         test_csv = '../../commonlitreadabilityprize/test.csv' # original test.csv (MUST EXIST)
-        output_csv = '../../commonlitreadabilityprize/final.csv' # the path to store the generated output file after inference
+        output_csv = '../../commonlitreadabilityprize/final.csv' # the path to store the generated output file with readability predictions after inference
         gpr_path = f'{models_dir}/gpr_rbf/best_9_all_y_gpr' # the path to load the trained GPR model on the 9 concatenated embeddings
         emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy' # the path to load the 9 concatenated embeddings
         y_path = f'{models_dir}/gpr_rbf/best_9_all_y_y_new.npy' # the path to load the target label

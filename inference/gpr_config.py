@@ -9,7 +9,7 @@ class GPR_CFG:
     COMPUTE_CV = False # Set to True if running inference on train.csv, set to False if running inference on test.csv
     train_csv = '../../commonlitreadabilityprize/train.csv' # original train.csv (MUST EXIST)
     test_csv = '../../commonlitreadabilityprize/test.csv' # original test.csv (MUST EXIST)
-    output_csv = '../../commonlitreadabilityprize/final.csv' # the path to store the generated output file after inference
+    output_csv = '../../commonlitreadabilityprize/final.csv' # the path to store the generated output file with readability predictions after inference
 
     gpr_path = f'{models_dir}/gpr_rbf/best_9_all_y_gpr' # the path to store or load the trained GPR model on the 9 concatenated embeddings
     emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy' # the path to store or load the 9 concatenated embeddings
