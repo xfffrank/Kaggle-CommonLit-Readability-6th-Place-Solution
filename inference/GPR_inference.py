@@ -537,3 +537,4 @@ if __name__ == '__main__':
 
     test['preds'] = preds_combine
     test.to_csv(GPR_CFG.output_csv, index=False)
+    print("Finished saving .csv file at {}".format(GPR_CFG.output_csv))
