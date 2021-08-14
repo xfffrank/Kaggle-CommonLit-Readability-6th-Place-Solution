@@ -31,10 +31,15 @@
 * `external_data` folder: external data for the use of pretraining. The data come from the same url as in `url_legal` of the original `train.csv` and we only used those with CC-BY and CC-BY-SA licenses. Specifically, we scraped the texts from the original URLs and used the same IDs in the csv file. We’ve also scraped some texts from “https://kids.frontiersin.org” which do not correspond to any ID in the training file, so the ID column is empty.
 
 ## Hardware
-* RTX 3090 * 2
+* CPU: 20x Intel(R) Core(TM) i9-10900X CPU @ 3.70GHz
+* Memory: 32 GB
+* GPU: RTX 3090 x 2
 
 ## Software
-Please see the `requirements.txt` for the dependencies.
+* Ubuntu 20.04.1 with Linux 5.8.0
+* CUDA: 11.1
+* Python: 3.8
+* Library dependencies: see the `requirements.txt` for details.
 
 ## Environment setup
 ```
@@ -48,18 +53,16 @@ $ pip install -r requirements.txt
 $ pip install torch==1.8.1+cu111 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
-## Configuration Setup
-* Fill the "set up" section in `config.py`.
-
 ## Training
 1. Train the models in the [model overview](#Model-overview-of-our-final-submission).
-    1. Pre-train models listed in `pretrain_config.yaml`.  
+    1. Fill the "set up" section in `config.py`.
+    2. Pre-train models listed in `pretrain_config.yaml`.  
         e.g. For the roberta-large model, run
         ```
         $ python pretrain.py --config roberta-large
         ```
         Remember to fill the `output_dir` where the checkpoint will be saved.
-    2. Finetune models listed in `finetune_config.yaml`.   
+    3. Finetune models listed in `finetune_config.yaml`.   
         e.g. For the roberta-large-mlm model, run
         ```
         $ python train.py --config roberta-large-mlm
@@ -69,9 +72,11 @@ $ pip install torch==1.8.1+cu111 -f https://download.pytorch.org/whl/torch_stabl
 2. Train a GPR model by concatenating all of the out-of-fold (OOF) embeddings for the 9 models.
     - Suppose the dimension of the embeddings for a single large model is 1024, and the number of samples in the training data is 2834, and total number of models is 9, you will get the concatenated embedding of the size (2834, 9*1024) as inputs for training the GPR model.
     - Inside the inference folder there is a `gpr_config.py` config file, change the following variables to the file location for saving the GPR model and the relevant files once the training is completed (These path should be the same for the inference as well).
+        - Note that the checkpoint paths pointing to the specific models in `GPR_CFG` also need to be changed accordingly.
       ```python
       class GPR_CFG:
           models_dir = '../../models' # the directory of all the models checkpoint (MUST EXIST)
+          train_csv = '../../commonlitreadabilityprize/train.csv' # original train.csv (MUST EXIST)
           gpr_path = f'{models_dir}/gpr_rbf/best_9_all_y_gpr' # the path to store or load the trained GPR model on the 9 concatenated embeddings
           emb_path = f'{models_dir}/gpr_rbf/best_9_all_y_embeddings.npy' # the path to store or load the 9 concatenated     embeddings
           y_path = f'{models_dir}/gpr_rbf/best_9_all_y_y_new.npy' # the path to store or load the target label
